@@ -1,6 +1,7 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
 import { palette, hexToRGBA } from '@/assets/styles/palette';
+import MissionButton from '@/components/common/MissionButton';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(20px); }
@@ -18,136 +19,154 @@ const Container = styled.div`
   font-family: ${palette.fontTech};
   position: relative;
   overflow-x: hidden;
+
+  @media (max-width: 600px) {
+    padding: 2rem 1rem;
+  }
 `;
 
 const FileFolder = styled.div`
   max-width: 800px;
   width: 100%;
-  background: ${hexToRGBA(palette.bgCard, 0.8)};
+  background: ${hexToRGBA(palette.bgCard, 0.85)};
   backdrop-filter: blur(20px);
   border: 1px solid ${hexToRGBA(palette.goldMain, 0.3)};
-  padding: 3rem;
+  padding: 3.5rem;
   position: relative;
   animation: ${fadeIn} 1s ease-out forwards;
-  box-shadow: 0 0 50px ${hexToRGBA(palette.black, 0.5)};
+  box-shadow: 0 0 60px ${hexToRGBA(palette.black, 0.7)};
 
   &::before {
     content: 'TOP SECRET';
     position: absolute;
     top: -15px;
-    right: 20px;
+    right: 30px;
     background: ${palette.accentError};
     color: ${palette.white};
-    padding: 4px 12px;
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 2px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    box-shadow: 0 0 15px ${hexToRGBA(palette.accentError, 0.4)};
+  }
+
+  @media (max-width: 600px) {
+    padding: 2rem 1.5rem;
   }
 `;
 
 const Header = styled.div`
-  border-bottom: 1px solid ${hexToRGBA(palette.goldMain, 0.2)};
-  padding-bottom: 1.5rem;
-  margin-bottom: 2rem;
+  border-bottom: 2px solid ${hexToRGBA(palette.goldMain, 0.3)};
+  padding-bottom: 2rem;
+  margin-bottom: 2.5rem;
 `;
 
 const ClassifiedStamp = styled.div`
   color: ${palette.accentError};
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 800;
-  letter-spacing: 3px;
-  margin-bottom: 0.5rem;
+  letter-spacing: 4px;
+  margin-bottom: 0.8rem;
 `;
 
 const OperationTitle = styled.h1`
-  font-size: 1.8rem;
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
   color: ${palette.goldMain};
   margin: 0;
   letter-spacing: 2px;
-  line-height: 1.4;
+  line-height: 1.3;
   text-transform: uppercase;
 `;
 
 const AgentGreeting = styled.div`
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   color: ${palette.goldBright};
-  margin-bottom: 2rem;
-  font-weight: 600;
+  margin-bottom: 2.5rem;
+  font-weight: 700;
 `;
 
 const BodyText = styled.p`
-  line-height: 1.8;
-  color: ${hexToRGBA(palette.white, 0.8)};
-  font-size: 1rem;
-  margin-bottom: 3rem;
+  line-height: 2;
+  color: ${hexToRGBA(palette.white, 0.85)};
+  font-size: 1.05rem;
+  margin-bottom: 3.5rem;
   text-align: justify;
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: ${palette.goldMain};
-  border-left: 4px solid ${palette.goldMain};
-  padding-left: 15px;
-  margin: 2rem 0 1.5rem 0;
+  padding: 8px 16px;
+  border-left: 5px solid ${palette.goldMain};
+  background: ${hexToRGBA(palette.goldMain, 0.1)};
+  margin: 3rem 0 2rem 0;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
+  display: inline-block;
 `;
 
 const ParameterGrid = styled.div`
-  display: grid;
-  gap: 1.5rem;
-  margin-bottom: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  margin-bottom: 4rem;
 `;
 
 const ParameterItem = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.8rem;
 `;
 
 const Label = styled.span`
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: ${palette.goldMain};
-  opacity: 0.7;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
 `;
 
 const Value = styled.div`
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   color: ${palette.white};
-  line-height: 1.6;
+  line-height: 1.8;
+  padding-left: 20px;
 `;
 
 const RSVPSection = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
-  margin-top: 2rem;
-  padding: 2rem;
-  border: 1px dashed ${hexToRGBA(palette.goldMain, 0.4)};
-  background: ${hexToRGBA(palette.goldMain, 0.05)};
-`;
+  gap: 2rem;
+  margin-top: 3rem;
+  padding: 3.5rem 2rem;
+  border: 2px dashed ${hexToRGBA(palette.goldMain, 0.3)};
+  background: ${hexToRGBA(palette.goldMain, 0.03)};
+  text-align: center;
+  position: relative;
+  overflow: hidden;
 
-const QRCodePlaceholder = styled.div`
-  width: 150px;
-  height: 150px;
-  background: ${palette.white};
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: ${palette.black};
-  font-size: 0.8rem;
-  font-weight: bold;
+  &::before {
+    content: 'RSVP REQUIRED';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg);
+    font-size: 5rem;
+    font-weight: 900;
+    color: ${hexToRGBA(palette.goldMain, 0.04)};
+    white-space: nowrap;
+    pointer-events: none;
+  }
 `;
 
 const Footer = styled.div`
-  margin-top: 4rem;
+  margin-top: 5rem;
   text-align: right;
   color: ${palette.goldMain};
   font-style: italic;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
 `;
 
 interface InvitationProps {
@@ -155,13 +174,18 @@ interface InvitationProps {
 }
 
 const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
+  const handleRSVPClick = () => {
+    // Replace this URL with the actual form link later
+    window.open('https://forms.google.com/your-form-url', '_blank');
+  };
+
   return (
     <Container>
       <FileFolder>
         <Header>
-          <ClassifiedStamp>機密等級：最高 / CLASSIFIED: TOP SECRET</ClassifiedStamp>
+          <ClassifiedStamp>機密等級：最高</ClassifiedStamp>
           <OperationTitle>
-            行動代號：[新郎名字] & [新娘名字] 的終極結盟<br />
+            行動代號：[新郎名字] & [新娘名字] 的終極結盟
           </OperationTitle>
         </Header>
 
@@ -206,13 +230,20 @@ const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
         </ParameterGrid>
 
         <SectionTitle>狀態確認</SectionTitle>
-        <BodyText style={{ marginBottom: '1rem' }}>
-          請於 [截止日期] 前，掃描下方 QR Code 向指揮中心確認您的參與狀態。這對於後勤補給至關重要。
-        </BodyText>
 
         <RSVPSection>
-          <QRCodePlaceholder>[ QR CODE ]</QRCodePlaceholder>
-          <Value style={{ fontSize: '0.8rem', opacity: 0.6 }}>CONFIRM STATUS VIA SCAN</Value>
+          <BodyText style={{ marginBottom: '2rem', textAlign: 'center' }}>
+            請於 [截止日期] 前，點擊下方按鈕回報您的參與狀態。<br />
+            這對於總部的後勤補給規劃至關重要。
+          </BodyText>
+
+          <MissionButton onClick={handleRSVPClick} isActive={true}>
+            啟動 RSVP 傳修回報
+          </MissionButton>
+
+          <Value style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: '1.5rem', padding: 0 }}>
+            SECURE LINK TO COMMAND CENTER
+          </Value>
         </RSVPSection>
 
         <Footer>期待與您在現場匯合。<br />總部敬上 / FROM HQ WITH LOVE</Footer>

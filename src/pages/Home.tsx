@@ -5,6 +5,7 @@ import StarBackground from '@/components/common/StarBackground';
 import HackingTitle from '@/components/common/HackingTitle';
 import MissionButton from '@/components/common/MissionButton';
 import Invitation from '@/pages/Invitation';
+import MissionMusic from '@/components/common/MissionMusic';
 
 // Animations
 const shake = keyframes`
@@ -218,9 +219,10 @@ const Particle = styled.div<{ $x: number; $y: number; $tx: string; $ty: string; 
 `;
 
 const Home: React.FC = () => {
-  const [view, setView] = useState<'login' | 'invitation'>('login');
+  const [view, setView] = useState<'login' | 'invitation'>('invitation');
   const [shutterState, setShutterState] = useState<'none' | 'closing' | 'opening'>('none');
   const [isExiting, setIsExiting] = useState(false);
+  const [startMusic, setStartMusic] = useState(true);
 
   const [isFocused, setIsFocused] = useState(false);
   const [code, setCode] = useState('');
@@ -229,7 +231,7 @@ const Home: React.FC = () => {
   const [hasError, setHasError] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [guestName, setGuestName] = useState('');
+  const [guestName, setGuestName] = useState('DEBUG_AGENT');
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; tx: string; ty: string; size: number; color: string }[]>([]);
 
   const handleEngage = async () => {
@@ -264,8 +266,9 @@ const Home: React.FC = () => {
               setIsExiting(true); // Fade out the card
               setTimeout(() => {
                 setShutterState('closing'); // Close shutters
+                setStartMusic(true); // START MUSIC
                 setTimeout(() => {
-                  setView('invitation'); // Switch view while shutters are closed
+                  setView('invitation'); // Switch to invitation
                   setShutterState('opening'); // Open shutters
                   setTimeout(() => setShutterState('none'), 800);
                 }, 800);
@@ -311,6 +314,7 @@ const Home: React.FC = () => {
       <StarBackground />
       <Scanlines />
       <Shutter $state={shutterState} />
+      {startMusic && <MissionMusic autoStart={true} />}
 
       {view === 'login' ? (
         <Card $isExiting={isExiting}>
