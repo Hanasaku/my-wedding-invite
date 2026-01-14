@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import styled, { keyframes } from 'styled-components';
+import React, { useState, useEffect } from 'react';
+import styled, { keyframes, css } from 'styled-components';
 import { palette, hexToRGBA } from '@/assets/styles/palette';
 import StarBackground from '@/components/common/StarBackground';
 import HackingTitle from '@/components/common/HackingTitle';
 import MissionButton from '@/components/common/MissionButton';
+import Invitation from '@/pages/Invitation';
 
 // Animations
 const shake = keyframes`
@@ -61,7 +62,7 @@ const Scanlines = styled.div`
   pointer-events: none;
 `;
 
-const Card = styled.div`
+const Card = styled.div<{ $isExiting?: boolean }>`
   position: relative;
   z-index: 10;
   width: 90%;
@@ -73,6 +74,12 @@ const Card = styled.div`
   border: 1px solid ${hexToRGBA(palette.goldMain, 0.2)};
   box-shadow: 0 0 40px ${hexToRGBA(palette.black, 0.8)};
   text-align: center;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  ${props => props.$isExiting && css`
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+    filter: blur(10px);
+  `}
 
   &::before, &::after {
     content: '';
@@ -95,10 +102,6 @@ const Card = styled.div`
     right: -5px;
     border-left: none;
     border-top: none;
-  }
-
-  @media (max-width: 600px) {
-    padding: 2rem 1.5rem;
   }
 `;
 
@@ -130,7 +133,7 @@ const StyledInput = styled.input`
   color: ${palette.goldBright}; 
   font-family: ${palette.fontTech};
   font-size: 1.5rem;
-  font-weight: 500; /* Medium weight looks cleaner with glow */
+  font-weight: 500;
   text-align: center;
   padding: 12px;
   outline: none;
@@ -164,11 +167,38 @@ const StatusMsg = styled.div<{ $visible: boolean; $isError?: boolean }>`
   animation: ${props => props.$visible && !props.$isError ? flicker : 'none'} 2s infinite ease-in-out;
 `;
 
-const FooterId = styled.div`
-  margin-top: 25px;
-  font-size: 0.6rem;
-  opacity: 0.4;
-  letter-spacing: 2px;
+const Shutter = styled.div<{ $state: 'none' | 'closing' | 'opening' }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  pointer-events: ${props => props.$state === 'none' ? 'none' : 'auto'};
+  display: flex;
+  flex-direction: column;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    background: ${palette.black};
+    transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1);
+  }
+
+  &::before {
+    top: 0;
+    transform: translateY(${props => props.$state === 'none' ? '-100%' : (props.$state === 'closing' ? '0' : '-100%')});
+    border-bottom: 1px solid ${palette.goldMain};
+  }
+
+  &::after {
+    bottom: 0;
+    transform: translateY(${props => props.$state === 'none' ? '100%' : (props.$state === 'closing' ? '0' : '100%')});
+    border-top: 1px solid ${palette.goldMain};
+  }
 `;
 
 const Particle = styled.div<{ $x: number; $y: number; $tx: string; $ty: string; $size: number; $color: string }>`
@@ -187,8 +217,11 @@ const Particle = styled.div<{ $x: number; $y: number; $tx: string; $ty: string; 
   animation: ${particleFly} 1s ease-out forwards;
 `;
 
-// Logic Component
 const Home: React.FC = () => {
+  const [view, setView] = useState<'login' | 'invitation'>('login');
+  const [shutterState, setShutterState] = useState<'none' | 'closing' | 'opening'>('none');
+  const [isExiting, setIsExiting] = useState(false);
+
   const [isFocused, setIsFocused] = useState(false);
   const [code, setCode] = useState('');
   const [status, setStatus] = useState({ visible: false, text: '' });
@@ -196,64 +229,49 @@ const Home: React.FC = () => {
   const [hasError, setHasError] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [guestName, setGuestName] = useState('');
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; tx: string; ty: string; size: number; color: string }[]>([]);
-
-  const createParticles = (xOffset: number) => {
-    const newParticles = Array.from({ length: 8 }).map(() => ({
-      id: Math.random(),
-      x: xOffset,
-      y: 0,
-      tx: `${(Math.random() - 0.5) * 100}px`,
-      ty: `${(Math.random() - 0.5) * 80 - 10}px`,
-      size: Math.random() * 3 + 2,
-      color: Math.random() > 0.4 ? palette.goldBright : palette.white
-    }));
-    setParticles(prev => [...prev.slice(-16), ...newParticles]);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val.length < code.length) {
-      const charWidth = 14;
-      const totalWidth = code.length * charWidth;
-      const xOffset = (totalWidth / 2) - charWidth;
-      createParticles(xOffset);
-    }
-    if (hasError) {
-      setHasError(false);
-      setStatus(prev => ({ ...prev, visible: false }));
-    }
-    setCode(val);
-  };
 
   const handleEngage = async () => {
     if (!code.trim() || loading || isSuccess) return;
 
-    setLoading(true); // Disable input/button immediately for "weight"
+    setLoading(true);
     setStatus({ visible: false, text: '' });
 
     if (navigator.vibrate) navigator.vibrate(50);
 
-    // Stage 1: Wait for 800ms to let the "click" sink in (Weight)
     setTimeout(async () => {
-      setIsProcessing(true); // Now change text to 'Decrypting...'
+      setIsProcessing(true);
 
       try {
         const guests = (await import('@/assets/guests.json')).default;
         const guest = guests.find((g: any) => g.code.toUpperCase() === code.toUpperCase());
 
-        // Stage 2: 2.8s for the "Labor Illusion"
         setTimeout(() => {
           setIsProcessing(false);
           setLoading(false);
           if (guest) {
             setIsSuccess(true);
-            setHasError(false);
+            setGuestName(guest.name);
             setStatus({
               visible: true,
               text: `IDENTITY CONFIRMED. WELCOME, ${guest.name.toUpperCase()}.`
             });
             if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
+            // START TRANSITION SEQUENCE
+            setTimeout(() => {
+              setIsExiting(true); // Fade out the card
+              setTimeout(() => {
+                setShutterState('closing'); // Close shutters
+                setTimeout(() => {
+                  setView('invitation'); // Switch view while shutters are closed
+                  setShutterState('opening'); // Open shutters
+                  setTimeout(() => setShutterState('none'), 800);
+                }, 800);
+              }, 600);
+            }, 2000);
+
           } else {
             setHasError(true);
             setStatus({ visible: true, text: 'INVALID ACCESS CODE. TRY AGAIN.' });
@@ -268,47 +286,65 @@ const Home: React.FC = () => {
     }, 800);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val.length < code.length) {
+      const charWidth = 14;
+      const xOffset = (code.length * charWidth / 2) - charWidth;
+      createParticles(xOffset);
+    }
+    if (hasError) setHasError(false);
+    setCode(val);
+  };
+
+  const createParticles = (xOffset: number) => {
+    const newParticles = Array.from({ length: 8 }).map(() => ({
+      id: Math.random(), x: xOffset, y: 0,
+      tx: `${(Math.random() - 0.5) * 100}px`, ty: `${(Math.random() - 0.5) * 80 - 10}px`,
+      size: Math.random() * 3 + 2, color: Math.random() > 0.4 ? palette.goldBright : palette.white
+    }));
+    setParticles(prev => [...prev.slice(-16), ...newParticles]);
+  };
+
   return (
     <Container>
       <StarBackground />
       <Scanlines />
+      <Shutter $state={shutterState} />
 
-      <Card>
-        <TopLabel>Private Access Only</TopLabel>
-        <HackingTitle finalTitle={"Mission:\nMemories with Us"} />
-
-        <InputWrapper $active={isFocused} $error={hasError}>
-          {particles.map(p => (
-            <Particle key={p.id} $x={p.x} $y={p.y} $tx={p.tx} $ty={p.ty} $size={p.size} $color={p.color} />
-          ))}
-          <StyledInput
-            placeholder="Enter Access Code"
-            value={code}
-            onChange={handleInputChange}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onKeyDown={(e) => e.key === 'Enter' && handleEngage()}
-            maxLength={12}
-            autoFocus
-          />
-        </InputWrapper>
-
-        <MissionButton
-          onClick={handleEngage}
-          disabled={loading || isSuccess || hasError || !code.trim()}
-          isSuccess={isSuccess}
-          isActive={(code.trim().length > 0 || loading) && !hasError}
-          isError={hasError}
-          isClicked={loading && !isSuccess && !hasError}
-          isProcessing={isProcessing}
-        >
-          {isProcessing ? 'Decrypting...' : (isSuccess ? 'Access Granted' : (hasError ? 'RETRY ACCESS' : 'ACCESS'))}
-        </MissionButton>
-
-        <StatusMsg $visible={status.visible} $isError={hasError}>{status.text}</StatusMsg>
-
-        <FooterId>Encryption: AES-256 | STATUS: COMMITTED</FooterId>
-      </Card>
+      {view === 'login' ? (
+        <Card $isExiting={isExiting}>
+          <TopLabel>Private Access Only</TopLabel>
+          <HackingTitle finalTitle={"Mission:\nMemories with Us"} />
+          <InputWrapper $active={isFocused} $error={hasError}>
+            {particles.map(p => <Particle key={p.id} $x={p.x} $y={p.y} $tx={p.tx} $ty={p.ty} $size={p.size} $color={p.color} />)}
+            <StyledInput
+              placeholder="Enter Access Code"
+              value={code}
+              onChange={handleInputChange}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              onKeyDown={(e) => e.key === 'Enter' && handleEngage()}
+              maxLength={12}
+              autoFocus
+            />
+          </InputWrapper>
+          <MissionButton
+            onClick={handleEngage}
+            disabled={loading || isSuccess || hasError || !code.trim()}
+            isSuccess={isSuccess}
+            isActive={(code.trim().length > 0 || loading) && !hasError}
+            isError={hasError}
+            isClicked={loading && !isSuccess && !hasError}
+            isProcessing={isProcessing}
+          >
+            {isProcessing ? 'Decrypting...' : (isSuccess ? 'Access Granted' : (hasError ? 'RETRY ACCESS' : 'ACCESS'))}
+          </MissionButton>
+          <StatusMsg $visible={status.visible} $isError={hasError}>{status.text}</StatusMsg>
+        </Card>
+      ) : (
+        <Invitation guestName={guestName} />
+      )}
     </Container>
   );
 };
