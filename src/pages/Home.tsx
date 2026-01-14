@@ -259,7 +259,7 @@ const Home: React.FC = () => {
             setStatus({ visible: true, text: 'INVALID ACCESS CODE. TRY AGAIN.' });
             if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
           }
-        }, 1800);
+        }, 2800);
       } catch (error) {
         console.error("Failed to load guest list", error);
         setIsProcessing(false);
@@ -295,10 +295,12 @@ const Home: React.FC = () => {
 
         <MissionButton
           onClick={handleEngage}
-          disabled={loading || isSuccess || hasError}
+          disabled={loading || isSuccess || hasError || !code.trim()}
           isSuccess={isSuccess}
-          isActive={code.length > 0}
+          isActive={(code.trim().length > 0 || loading) && !hasError}
           isError={hasError}
+          isClicked={loading && !isSuccess && !hasError}
+          isProcessing={isProcessing}
         >
           {isProcessing ? 'Decrypting...' : (isSuccess ? 'Access Granted' : (hasError ? 'RETRY ACCESS' : 'ACCESS'))}
         </MissionButton>

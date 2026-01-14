@@ -8,6 +8,8 @@ export const palette = {
     goldMain: '#D4AF37',
     goldDeep: '#8E6E17',
     goldDim: '#5c4d18',
+    goldMuted: '#AD8D2D',      // Satin gold for processing state
+    goldMutedLight: '#C4A43D', // Brighter bronze for borders
 
     // Accents & Signals
     accentSuccess: '#00ff41',
