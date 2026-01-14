@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import { palette } from '@/assets/styles/palette';
 
 const Canvas = styled.canvas`
   position: fixed;
@@ -37,7 +38,7 @@ const StarBackground: React.FC = () => {
                     speed: Math.random() * 0.5 + 0.1,
                     angle: Math.random() * Math.PI * 2,
                     spin: (Math.random() - 0.5) * 0.01,
-                    color: Math.random() > 0.5 ? '#D4AF37' : '#FFFFFF',
+                    color: Math.random() > 0.5 ? palette.goldMain : palette.white,
                     opacity: Math.random(),
                     phase: Math.random() * Math.PI * 2,
                 });
@@ -73,7 +74,7 @@ const StarBackground: React.FC = () => {
                 let dist = Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2);
                 if (dist < 200) {
                     ctx.beginPath();
-                    ctx.strokeStyle = '#D4AF37';
+                    ctx.strokeStyle = palette.goldMain;
                     ctx.globalAlpha = currentOpacity * 0.1;
                     ctx.moveTo(p.x, p.y);
                     ctx.lineTo(centerX, centerY);

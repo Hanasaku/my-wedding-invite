@@ -12,7 +12,7 @@ const Title = styled.h1`
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
   min-height: 2.5rem;
   margin-bottom: 2.5rem;
-  background: linear-gradient(to bottom, #fff 0%, ${palette.goldMain} 100%);
+  background: linear-gradient(to bottom, ${palette.white} 0%, ${palette.goldMain} 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
