@@ -298,7 +298,7 @@ const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
           </Value>
         </RSVPSection>
 
-        <Footer $visible={isLoaded}>期待與您在現場匯合。<br />來自總部的滿滿愛意</Footer>
+        <Footer $visible={isLoaded}>期待與您在現場匯合。<br />來自總部</Footer>
       </FileFolder>
     </Container>
   );
