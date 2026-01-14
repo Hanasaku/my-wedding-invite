@@ -129,8 +129,8 @@ const StyledInput = styled.input`
   border: none;
   color: ${palette.goldBright}; 
   font-family: ${palette.fontTech};
-  font-size: 1.6rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 500; /* Medium weight looks cleaner with glow */
   text-align: center;
   padding: 12px;
   outline: none;
@@ -195,6 +195,7 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; tx: string; ty: string; size: number; color: string }[]>([]);
 
   const createParticles = (xOffset: number) => {
@@ -226,38 +227,45 @@ const Home: React.FC = () => {
   };
 
   const handleEngage = async () => {
-    if (!code.trim()) {
-      setHasError(true);
-      return;
-    }
+    if (!code.trim() || loading || isSuccess) return;
 
-    setLoading(true);
+    setLoading(true); // Disable input/button immediately for "weight"
+    setStatus({ visible: false, text: '' });
+
     if (navigator.vibrate) navigator.vibrate(50);
 
-    try {
-      const guests = (await import('@/assets/guests.json')).default;
-      const guest = guests.find((g: any) => g.code.toUpperCase() === code.toUpperCase());
+    // Stage 1: Wait for 600ms (UX Golden Ratio for "substantial interaction")
+    setTimeout(async () => {
+      setIsProcessing(true); // Now change text to 'Decrypting...'
 
-      setTimeout(() => {
+      try {
+        const guests = (await import('@/assets/guests.json')).default;
+        const guest = guests.find((g: any) => g.code.toUpperCase() === code.toUpperCase());
+
+        // Stage 2: 1.8s for the "Labor Illusion" - making the access feel earned
+        setTimeout(() => {
+          setIsProcessing(false);
+          setLoading(false);
+          if (guest) {
+            setIsSuccess(true);
+            setHasError(false);
+            setStatus({
+              visible: true,
+              text: `IDENTITY CONFIRMED. WELCOME, ${guest.name.toUpperCase()}.`
+            });
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+          } else {
+            setHasError(true);
+            setStatus({ visible: true, text: 'INVALID ACCESS CODE. TRY AGAIN.' });
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+          }
+        }, 1800);
+      } catch (error) {
+        console.error("Failed to load guest list", error);
+        setIsProcessing(false);
         setLoading(false);
-        if (guest) {
-          setIsSuccess(true);
-          setHasError(false);
-          setStatus({
-            visible: true,
-            text: `IDENTITY CONFIRMED. WELCOME, ${guest.name.toUpperCase()}.`
-          });
-          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        } else {
-          setHasError(true);
-          setStatus({ visible: true, text: 'INVALID ACCESS CODE. TRY AGAIN.' });
-          if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-        }
-      }, 1500);
-    } catch (error) {
-      console.error("Failed to load guest list", error);
-      setLoading(false);
-    }
+      }
+    }, 800);
   };
 
   return (
@@ -287,10 +295,12 @@ const Home: React.FC = () => {
 
         <MissionButton
           onClick={handleEngage}
-          disabled={loading || isSuccess}
+          disabled={loading || isSuccess || hasError}
           isSuccess={isSuccess}
+          isActive={code.length > 0}
+          isError={hasError}
         >
-          {loading ? 'Decrypting...' : (isSuccess ? 'Access Granted' : 'ACCESS')}
+          {isProcessing ? 'Decrypting...' : (isSuccess ? 'Access Granted' : (hasError ? 'RETRY ACCESS' : 'ACCESS'))}
         </MissionButton>
 
         <StatusMsg visible={status.visible} isError={hasError}>{status.text}</StatusMsg>
