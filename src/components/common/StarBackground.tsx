@@ -26,8 +26,8 @@ const StarBackground: React.FC = () => {
         const particleCount = 120;
 
         const init = () => {
-            w = canvas.width = window.innerWidth;
-            h = canvas.height = window.innerHeight;
+            w = canvas.width = document.documentElement.clientWidth;
+            h = canvas.height = document.documentElement.clientHeight;
             particles = [];
             for (let i = 0; i < particleCount; i++) {
                 particles.push({
@@ -45,6 +45,7 @@ const StarBackground: React.FC = () => {
         };
 
         const draw = () => {
+            if (!ctx) return;
             ctx.clearRect(0, 0, w, h);
             const centerX = w / 2;
             const centerY = h / 2;
@@ -53,6 +54,12 @@ const StarBackground: React.FC = () => {
                 p.angle += p.spin;
                 p.x += Math.cos(p.angle) * p.speed;
                 p.y += Math.sin(p.angle) * p.speed;
+
+                // Wrapping around edges
+                if (p.x < 0) p.x = w;
+                if (p.x > w) p.x = 0;
+                if (p.y < 0) p.y = h;
+                if (p.y > h) p.y = 0;
 
                 p.phase += 0.02;
                 let currentOpacity = ((Math.sin(p.phase) + 1) / 2) * p.opacity;
@@ -76,12 +83,19 @@ const StarBackground: React.FC = () => {
             requestAnimationFrame(draw);
         };
 
-        window.addEventListener('resize', init);
+        let resizeTimer: number;
+        const handleResize = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(init, 200);
+        };
+
+        window.addEventListener('resize', handleResize);
         init();
-        draw();
+        const animationId = requestAnimationFrame(draw);
 
         return () => {
-            window.removeEventListener('resize', init);
+            window.removeEventListener('resize', handleResize);
+            cancelAnimationFrame(animationId);
         };
     }, []);
 

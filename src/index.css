@@ -8,9 +8,9 @@
 
 body {
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
   background-color: #020205;
-  color: #white;
+  color: white;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

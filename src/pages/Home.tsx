@@ -8,12 +8,15 @@ import MissionButton from '@/components/common/MissionButton';
 const Container = styled.div`
   background-color: ${palette.bgPrimary};
   color: ${palette.textPrimary};
-  overflow: hidden;
-  height: 100vh;
-  width: 100vw;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 2rem 0;
   font-family: ${palette.fontTech};
   position: relative;
 `;
@@ -125,66 +128,66 @@ const FooterId = styled.div`
 `;
 
 const Home: React.FC = () => {
-    const [isFocused, setIsFocused] = useState(false);
-    const [code, setCode] = useState('');
-    const [status, setStatus] = useState({ visible: false, text: '' });
-    const [loading, setLoading] = useState(false);
-    const [hasError, setHasError] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [code, setCode] = useState('');
+  const [status, setStatus] = useState({ visible: false, text: '' });
+  const [loading, setLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-    const handleEngage = () => {
-        if (!code.trim()) {
-            setHasError(true);
-            setTimeout(() => setHasError(false), 500);
-            return;
-        }
+  const handleEngage = () => {
+    if (!code.trim()) {
+      setHasError(true);
+      setTimeout(() => setHasError(false), 500);
+      return;
+    }
 
-        setLoading(true);
-        if (navigator.vibrate) navigator.vibrate(50);
+    setLoading(true);
+    if (navigator.vibrate) navigator.vibrate(50);
 
-        // Simulate Decryption
-        setTimeout(() => {
-            setLoading(false);
-            setIsSuccess(true);
-            setStatus({ visible: true, text: 'IDENTITY CONFIRMED. WELCOME AGENT.' });
-            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        }, 1500);
-    };
+    // Simulate Decryption
+    setTimeout(() => {
+      setLoading(false);
+      setIsSuccess(true);
+      setStatus({ visible: true, text: 'IDENTITY CONFIRMED. WELCOME AGENT.' });
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    }, 1500);
+  };
 
-    return (
-        <Container>
-            <StarBackground />
-            <Scanlines />
+  return (
+    <Container>
+      <StarBackground />
+      <Scanlines />
 
-            <Card>
-                <TopLabel>Confidential Assignment</TopLabel>
-                <HackingTitle finalTitle="Protocol: The Vow" />
+      <Card>
+        <TopLabel>Confidential Assignment</TopLabel>
+        <HackingTitle finalTitle="Protocol: The Vow" />
 
-                <InputWrapper active={isFocused} error={hasError}>
-                    <StyledInput
-                        placeholder="Agent Code"
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        onFocus={() => setIsFocused(true)}
-                        onBlur={() => setIsFocused(false)}
-                        maxLength={8}
-                    />
-                </InputWrapper>
+        <InputWrapper active={isFocused} error={hasError}>
+          <StyledInput
+            placeholder="Agent Code"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            maxLength={8}
+          />
+        </InputWrapper>
 
-                <MissionButton
-                    onClick={handleEngage}
-                    disabled={loading || isSuccess}
-                    isSuccess={isSuccess}
-                >
-                    {loading ? 'Decrypting...' : (isSuccess ? 'Access Granted' : 'Engage Protocol')}
-                </MissionButton>
+        <MissionButton
+          onClick={handleEngage}
+          disabled={loading || isSuccess}
+          isSuccess={isSuccess}
+        >
+          {loading ? 'Decrypting...' : (isSuccess ? 'Access Granted' : 'Engage Protocol')}
+        </MissionButton>
 
-                <StatusMsg visible={status.visible}>{status.text}</StatusMsg>
+        <StatusMsg visible={status.visible}>{status.text}</StatusMsg>
 
-                <FooterId>Encryption: AES-256 | SIG: 007-SF</FooterId>
-            </Card>
-        </Container>
-    );
+        <FooterId>Encryption: AES-256 | SIG: 007-SF</FooterId>
+      </Card>
+    </Container>
+  );
 };
 
 export default Home;
