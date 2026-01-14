@@ -219,10 +219,10 @@ const Particle = styled.div<{ $x: number; $y: number; $tx: string; $ty: string; 
 `;
 
 const Home: React.FC = () => {
-  const [view, setView] = useState<'login' | 'invitation'>('invitation');
+  const [view, setView] = useState<'login' | 'invitation'>('login');
   const [shutterState, setShutterState] = useState<'none' | 'closing' | 'opening'>('none');
   const [isExiting, setIsExiting] = useState(false);
-  const [startMusic, setStartMusic] = useState(true);
+  const [startMusic, setStartMusic] = useState(false);
 
   const [isFocused, setIsFocused] = useState(false);
   const [code, setCode] = useState('');

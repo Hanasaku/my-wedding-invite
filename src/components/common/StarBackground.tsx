@@ -8,7 +8,7 @@ const Canvas = styled.canvas`
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 1;
+  z-index: 1; 
   pointer-events: none;
 `;
 
@@ -24,23 +24,28 @@ const StarBackground: React.FC = () => {
 
         let w: number, h: number;
         let particles: any[] = [];
-        const particleCount = 120;
+        const particleCount = 350;
+        const dpr = window.devicePixelRatio || 1;
 
         const init = () => {
-            w = canvas.width = document.documentElement.clientWidth;
-            h = canvas.height = document.documentElement.clientHeight;
+            w = window.innerWidth;
+            h = window.innerHeight;
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            ctx.scale(dpr, dpr);
+
             particles = [];
             for (let i = 0; i < particleCount; i++) {
                 particles.push({
-                    x: Math.random() * w,
-                    y: Math.random() * h,
-                    size: Math.random() * 2 + 0.5,
-                    speed: Math.random() * 0.5 + 0.1,
-                    angle: Math.random() * Math.PI * 2,
-                    spin: (Math.random() - 0.5) * 0.01,
-                    color: Math.random() > 0.5 ? palette.goldMain : palette.white,
-                    opacity: Math.random(),
+                    x: (Math.random() - 0.5) * w * 3,
+                    y: (Math.random() - 0.5) * h * 3,
+                    z: Math.random() * w,
+                    size: Math.random() * 1.5 + 0.5,
+                    speed: Math.random() * 0.3 + 0.1,
+                    color: Math.random() > 0.85 ? palette.goldMain : palette.white,
+                    opacity: Math.random() * 0.6 + 0.4,
                     phase: Math.random() * Math.PI * 2,
+                    isGatsby: Math.random() > 0.985,
                 });
             }
         };
@@ -48,48 +53,74 @@ const StarBackground: React.FC = () => {
         const draw = () => {
             if (!ctx) return;
             ctx.clearRect(0, 0, w, h);
+
             const centerX = w / 2;
             const centerY = h / 2;
 
             particles.forEach((p) => {
-                p.angle += p.spin;
-                p.x += Math.cos(p.angle) * p.speed;
-                p.y += Math.sin(p.angle) * p.speed;
+                p.z -= p.speed;
+                if (p.z <= 0) {
+                    p.z = w;
+                    p.x = (Math.random() - 0.5) * w * 3;
+                    p.y = (Math.random() - 0.5) * h * 3;
+                }
 
-                // Wrapping around edges
-                if (p.x < 0) p.x = w;
-                if (p.x > w) p.x = 0;
-                if (p.y < 0) p.y = h;
-                if (p.y > h) p.y = 0;
+                const projectionK = 180.0 / p.z;
+                const px = p.x * projectionK + centerX;
+                const py = p.y * projectionK + centerY;
 
-                p.phase += 0.02;
-                let currentOpacity = ((Math.sin(p.phase) + 1) / 2) * p.opacity;
+                if (px < -100 || px > w + 100 || py < -100 || py > h + 100) return;
+
+                // CINEMATIC TWINKLE LOGIC
+                p.phase += 0.015;
+                const twinkle = (Math.sin(p.phase) + 1) / 2;
+
+                // Widened twinkle range (0.15 to 1.0) ensures persistent flickering
+                const currentTwinkle = 0.15 + 0.85 * twinkle;
+
+                const depthAlpha = 1 - (p.z / w);
+                // Ensure even the closest stars flicker strongly
+                const finalOpacity = p.opacity * currentTwinkle * (0.4 + 0.6 * depthAlpha);
 
                 ctx.beginPath();
-                ctx.fillStyle = p.color;
-                ctx.globalAlpha = currentOpacity;
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                if (p.isGatsby) {
+                    ctx.fillStyle = palette.accentSuccess;
+                    // Shadow pulsates with the star
+                    ctx.shadowBlur = 15 * currentTwinkle;
+                    ctx.shadowColor = palette.accentSuccess;
+                } else {
+                    ctx.fillStyle = p.color;
+                    ctx.shadowBlur = p.color === palette.goldMain ? 5 * currentTwinkle : 0;
+                    ctx.shadowColor = palette.goldMain;
+                }
+
+                ctx.globalAlpha = Math.max(0, Math.min(1, finalOpacity));
+
+                const renderedSize = Math.max(0.6, p.size * projectionK * 0.5);
+                ctx.arc(px, py, renderedSize, 0, Math.PI * 2);
                 ctx.fill();
 
-                let dist = Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2);
-                if (dist < 200) {
+                // Long Tesseract Lines
+                const lineRange = 450;
+                if (p.z < lineRange) {
                     ctx.beginPath();
                     ctx.strokeStyle = palette.goldMain;
-                    ctx.globalAlpha = currentOpacity * 0.1;
-                    ctx.moveTo(p.x, p.y);
+                    // Lines also breathe with the stars
+                    ctx.globalAlpha = (1 - p.z / lineRange) * 0.12 * currentTwinkle;
+                    ctx.lineWidth = 0.4;
+                    ctx.moveTo(px, py);
                     ctx.lineTo(centerX, centerY);
                     ctx.stroke();
                 }
+
+                // Reset shadow for next particles
+                ctx.shadowBlur = 0;
             });
+
             requestAnimationFrame(draw);
         };
 
-        let resizeTimer: number;
-        const handleResize = () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = window.setTimeout(init, 200);
-        };
-
+        const handleResize = () => init();
         window.addEventListener('resize', handleResize);
         init();
         const animationId = requestAnimationFrame(draw);
@@ -100,7 +131,7 @@ const StarBackground: React.FC = () => {
         };
     }, []);
 
-    return <Canvas ref={canvasRef} id="bg-canvas" />;
+    return <Canvas ref={canvasRef} />;
 };
 
 export default StarBackground;
