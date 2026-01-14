@@ -111,16 +111,16 @@ const TopLabel = styled.div`
   margin-bottom: 10px;
 `;
 
-const InputWrapper = styled.div<{ active: boolean; error: boolean }>`
+const InputWrapper = styled.div<{ $active: boolean; $error: boolean }>`
   position: relative;
   margin-bottom: 2rem;
   border-bottom: 1px solid ${props =>
-    props.error ? palette.accentError :
-      (props.active ? palette.goldMain : hexToRGBA(palette.white, 0.3))
+    props.$error ? palette.accentError :
+      (props.$active ? palette.goldMain : hexToRGBA(palette.white, 0.3))
   };
-  box-shadow: ${props => props.active ? `0 5px 15px -10px ${hexToRGBA(palette.goldMain, 0.5)}` : 'none'};
+  box-shadow: ${props => props.$active ? `0 5px 15px -10px ${hexToRGBA(palette.goldMain, 0.5)}` : 'none'};
   transition: 0.3s;
-  animation: ${props => props.error ? shake : 'none'} 0.3s ease-in-out;
+  animation: ${props => props.$error ? shake : 'none'} 0.3s ease-in-out;
 `;
 
 const StyledInput = styled.input`
@@ -149,19 +149,19 @@ const StyledInput = styled.input`
   }
 `;
 
-const StatusMsg = styled.div<{ visible: boolean; isError?: boolean }>`
+const StatusMsg = styled.div<{ $visible: boolean; $isError?: boolean }>`
   margin-top: 1.5rem;
   height: 20px;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 2px;
-  color: ${props => props.isError ? palette.accentError : palette.goldBright};
-  text-shadow: ${props => props.isError ? 'none' : `0 0 10px ${palette.goldMain}`};
-  opacity: ${props => props.visible ? 1 : 0};
-  transform: translateY(${props => props.visible ? '0' : '10px'});
+  color: ${props => props.$isError ? palette.accentError : palette.goldBright};
+  text-shadow: ${props => props.$isError ? 'none' : `0 0 10px ${palette.goldMain}`};
+  opacity: ${props => props.$visible ? 1 : 0};
+  transform: translateY(${props => props.$visible ? '0' : '10px'});
   transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
   text-transform: uppercase;
-  animation: ${props => props.visible && !props.isError ? flicker : 'none'} 2s infinite ease-in-out;
+  animation: ${props => props.$visible && !props.$isError ? flicker : 'none'} 2s infinite ease-in-out;
 `;
 
 const FooterId = styled.div`
@@ -171,19 +171,19 @@ const FooterId = styled.div`
   letter-spacing: 2px;
 `;
 
-const Particle = styled.div<{ x: number; y: number; tx: string; ty: string; size: number; color: string }>`
+const Particle = styled.div<{ $x: number; $y: number; $tx: string; $ty: string; $size: number; $color: string }>`
   position: absolute;
-  left: calc(50% + ${props => props.x}px);
-  top: calc(50% + ${props => props.y}px);
-  width: ${props => props.size}px;
-  height: ${props => props.size}px;
-  background: ${props => props.color};
+  left: calc(50% + ${props => props.$x}px);
+  top: calc(50% + ${props => props.$y}px);
+  width: ${props => props.$size}px;
+  height: ${props => props.$size}px;
+  background: ${props => props.$color};
   border-radius: 50%;
   pointer-events: none;
   z-index: 20;
-  box-shadow: 0 0 10px ${props => props.color};
-  --tx: ${props => props.tx};
-  --ty: ${props => props.ty};
+  box-shadow: 0 0 10px ${props => props.$color};
+  --tx: ${props => props.$tx};
+  --ty: ${props => props.$ty};
   animation: ${particleFly} 1s ease-out forwards;
 `;
 
@@ -234,7 +234,7 @@ const Home: React.FC = () => {
 
     if (navigator.vibrate) navigator.vibrate(50);
 
-    // Stage 1: Wait for 600ms (UX Golden Ratio for "substantial interaction")
+    // Stage 1: Wait for 800ms to let the "click" sink in (Weight)
     setTimeout(async () => {
       setIsProcessing(true); // Now change text to 'Decrypting...'
 
@@ -242,7 +242,7 @@ const Home: React.FC = () => {
         const guests = (await import('@/assets/guests.json')).default;
         const guest = guests.find((g: any) => g.code.toUpperCase() === code.toUpperCase());
 
-        // Stage 2: 1.8s for the "Labor Illusion" - making the access feel earned
+        // Stage 2: 2.8s for the "Labor Illusion"
         setTimeout(() => {
           setIsProcessing(false);
           setLoading(false);
@@ -277,9 +277,9 @@ const Home: React.FC = () => {
         <TopLabel>Private Access Only</TopLabel>
         <HackingTitle finalTitle={"Mission:\nMemories with Us"} />
 
-        <InputWrapper active={isFocused} error={hasError}>
+        <InputWrapper $active={isFocused} $error={hasError}>
           {particles.map(p => (
-            <Particle key={p.id} x={p.x} y={p.y} tx={p.tx} ty={p.ty} size={p.size} color={p.color} />
+            <Particle key={p.id} $x={p.x} $y={p.y} $tx={p.tx} $ty={p.ty} $size={p.size} $color={p.color} />
           ))}
           <StyledInput
             placeholder="Enter Access Code"
@@ -305,7 +305,7 @@ const Home: React.FC = () => {
           {isProcessing ? 'Decrypting...' : (isSuccess ? 'Access Granted' : (hasError ? 'RETRY ACCESS' : 'ACCESS'))}
         </MissionButton>
 
-        <StatusMsg visible={status.visible} isError={hasError}>{status.text}</StatusMsg>
+        <StatusMsg $visible={status.visible} $isError={hasError}>{status.text}</StatusMsg>
 
         <FooterId>Encryption: AES-256 | STATUS: COMMITTED</FooterId>
       </Card>

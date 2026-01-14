@@ -22,41 +22,39 @@ const energyPulse = keyframes`
 `;
 
 interface StyledButtonProps {
-  isSuccess?: boolean;
-  isActive?: boolean;
-  isError?: boolean;
-  isClicked?: boolean;
-  isProcessing?: boolean;
+  $isSuccess?: boolean;
+  $isActive?: boolean;
+  $isError?: boolean;
+  $isClicked?: boolean;
+  $isProcessing?: boolean;
 }
 
 const StyledButton = styled.button<StyledButtonProps>`
   background: ${props => {
-    if (props.isSuccess) return palette.goldMain;
-    // Ready to be triggered or currently processing
-    if (props.isProcessing) return palette.goldMuted;
-    if (props.isClicked) return palette.goldMain;
-    if (props.isError) return hexToRGBA(palette.accentError, 0.15);
-    if (props.isActive) return hexToRGBA(palette.goldMain, 0.35);
+    if (props.$isSuccess) return palette.goldMain;
+    if (props.$isProcessing) return palette.goldMuted;
+    if (props.$isClicked) return palette.goldMain;
+    if (props.$isError) return hexToRGBA(palette.accentError, 0.15);
+    if (props.$isActive) return hexToRGBA(palette.goldMain, 0.35);
     return hexToRGBA(palette.goldMain, 0.05);
   }};
   border: 1px solid ${props => {
-    if (props.isSuccess) return palette.goldMain;
-    if (props.isProcessing) return palette.goldMutedLight;
-    if (props.isClicked) return palette.goldMain;
-    if (props.isError) return palette.accentError;
-    if (props.isActive) return palette.goldMain;
+    if (props.$isSuccess) return palette.goldMain;
+    if (props.$isProcessing) return palette.goldMutedLight;
+    if (props.$isClicked) return palette.goldMain;
+    if (props.$isError) return palette.accentError;
+    if (props.$isActive) return palette.goldMain;
     return hexToRGBA(palette.goldMain, 0.2);
   }};
   color: ${props => {
-    if (props.isSuccess || props.isClicked || props.isProcessing) return palette.black;
-    if (props.isError) return palette.accentError;
+    if (props.$isSuccess || props.$isClicked || props.$isProcessing) return palette.black;
+    if (props.$isError) return palette.accentError;
     return palette.goldMain;
   }};
   box-shadow: ${props => {
-    if (props.isSuccess) return `0 0 50px ${hexToRGBA(palette.goldMain, 0.7)}, 0 0 20px ${hexToRGBA(palette.goldBright, 0.4)}`;
-    // Soft glow for processing to show active internal logic
-    if (props.isProcessing) return `0 0 20px ${hexToRGBA(palette.goldMuted, 0.4)}`;
-    if (props.isClicked) return `0 0 30px ${hexToRGBA(palette.goldMain, 0.4)}`;
+    if (props.$isSuccess) return `0 0 50px ${hexToRGBA(palette.goldMain, 0.7)}, 0 0 20px ${hexToRGBA(palette.goldBright, 0.4)}`;
+    if (props.$isProcessing) return `0 0 20px ${hexToRGBA(palette.goldMuted, 0.4)}`;
+    if (props.$isClicked) return `0 0 30px ${hexToRGBA(palette.goldMain, 0.4)}`;
     return 'none';
   }};
   padding: 15px 40px;
@@ -65,23 +63,23 @@ const StyledButton = styled.button<StyledButtonProps>`
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  cursor: ${props => (props.isSuccess || props.isError) ? 'default' : (props.isActive ? 'pointer' : 'not-allowed')};
+  cursor: ${props => (props.$isSuccess || props.$isError) ? 'default' : (props.$isActive ? 'pointer' : 'not-allowed')};
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   position: relative;
   overflow: hidden;
   width: 100%;
   outline: none;
 
-  ${props => props.isError && css`
+  ${props => props.$isError && css`
     animation: ${buttonShake} 0.4s ease-in-out;
   `}
 
-  ${props => props.isProcessing && css`
+  ${props => props.$isProcessing && css`
     animation: ${energyPulse} 2s infinite ease-in-out;
   `}
 
   &:hover {
-    ${props => props.isActive && !props.isSuccess && !props.isError && !props.disabled && css`
+    ${props => props.$isActive && !props.$isSuccess && !props.$isError && !props.disabled && css`
       background: ${palette.goldMain};
       color: ${palette.black};
       box-shadow: 0 0 20px ${hexToRGBA(palette.goldMain, 0.3)};
@@ -93,7 +91,7 @@ const StyledButton = styled.button<StyledButtonProps>`
   }
 
   &:active {
-    ${props => props.isActive && !props.isSuccess && !props.isError && !props.disabled && css`
+    ${props => props.$isActive && !props.$isSuccess && !props.$isError && !props.disabled && css`
       transform: scale(0.98);
     `}
   }
@@ -107,12 +105,12 @@ const StyledButton = styled.button<StyledButtonProps>`
     height: 100%;
     background: linear-gradient(90deg, ${palette.transparent}, ${hexToRGBA(palette.white, 0.4)}, ${palette.transparent});
     transform: skewX(-20deg);
-    display: ${props => props.isProcessing ? 'block' : (props.isActive ? 'block' : 'none')};
-    opacity: ${props => props.isProcessing ? 0.2 : 1};
+    display: ${props => props.$isProcessing ? 'block' : (props.$isActive ? 'block' : 'none')};
+    opacity: ${props => props.$isProcessing ? 0.2 : 1};
   }
 
   &:disabled {
-    opacity: ${props => (props.isSuccess || props.isError || props.isActive || props.isClicked || props.isProcessing) ? 1 : 0.6};
+    opacity: ${props => (props.$isSuccess || props.$isError || props.$isActive || props.$isClicked || props.$isProcessing) ? 1 : 0.6};
   }
 `;
 
@@ -127,7 +125,14 @@ interface MissionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const MissionButton: React.FC<MissionButtonProps> = ({ children, isSuccess, isActive, isError, isClicked, isProcessing, ...props }) => {
   return (
-    <StyledButton isSuccess={isSuccess} isActive={isActive} isError={isError} isClicked={isClicked} isProcessing={isProcessing} {...props}>
+    <StyledButton
+      $isSuccess={isSuccess}
+      $isActive={isActive}
+      $isError={isError}
+      $isClicked={isClicked}
+      $isProcessing={isProcessing}
+      {...props}
+    >
       {children}
     </StyledButton>
   );
