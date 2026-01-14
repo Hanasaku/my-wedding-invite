@@ -5,6 +5,8 @@ import { palette } from '@/assets/styles/palette';
 const Title = styled.h1`
   font-family: ${palette.fontClassy};
   font-size: 2.2rem;
+  line-height: 1.1;
+  white-space: pre-wrap;
   color: ${palette.textPrimary};
   letter-spacing: 2px;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);

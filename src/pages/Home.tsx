@@ -161,7 +161,7 @@ const Home: React.FC = () => {
 
       <Card>
         <TopLabel>Confidential Assignment</TopLabel>
-        <HackingTitle finalTitle="Protocol: The Vow" />
+        <HackingTitle finalTitle={"Mission:\nMemories with Us"} />
 
         <InputWrapper active={isFocused} error={hasError}>
           <StyledInput
@@ -179,12 +179,12 @@ const Home: React.FC = () => {
           disabled={loading || isSuccess}
           isSuccess={isSuccess}
         >
-          {loading ? 'Decrypting...' : (isSuccess ? 'Access Granted' : 'Engage Protocol')}
+          {loading ? 'Decrypting...' : (isSuccess ? 'Access Granted' : 'ACCESS')}
         </MissionButton>
 
         <StatusMsg visible={status.visible}>{status.text}</StatusMsg>
 
-        <FooterId>Encryption: AES-256 | SIG: 007-SF</FooterId>
+        <FooterId>Encryption: AES-256 | STATUS: COMMITTED</FooterId>
       </Card>
     </Container>
   );
