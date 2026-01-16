@@ -198,7 +198,7 @@ const RSVPSection = styled.div<{ $visible: boolean }>`
 `;
 
 const Footer = styled.div<{ $visible: boolean }>`
-  margin-top: 5rem;
+  margin-top: 2rem;
   text-align: right;
   color: ${palette.goldMain};
   font-style: italic;
