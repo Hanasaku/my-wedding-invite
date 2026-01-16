@@ -218,7 +218,7 @@ const Particle = styled.div<{ $x: number; $y: number; $tx: string; $ty: string; 
   animation: ${particleFly} 1s ease-out forwards;
 `;
 
-const Home: React.FC = () => {
+const Access: React.FC = () => {
   const [view, setView] = useState<'login' | 'invitation'>('login');
   const [shutterState, setShutterState] = useState<'none' | 'closing' | 'opening'>('none');
   const [isExiting, setIsExiting] = useState(false);
@@ -353,4 +353,4 @@ const Home: React.FC = () => {
   );
 };
 
-export default Home;
+export default Access;

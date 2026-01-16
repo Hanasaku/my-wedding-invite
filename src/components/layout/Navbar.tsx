@@ -4,7 +4,7 @@ const Navbar: React.FC = () => {
     return (
         <nav>
             <ul>
-                <li>Home</li>
+                <li>Access</li>
                 <li>Gallery</li>
                 <li>RSVP</li>
             </ul>
