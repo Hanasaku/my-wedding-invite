@@ -211,12 +211,15 @@ const Footer = styled.div<{ $visible: boolean }>`
   `}
 `;
 
+import RSVPForm from '@/pages/RSVPForm';
+
 interface InvitationProps {
   guestName: string;
 }
 
 const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showRSVP, setShowRSVP] = useState(false);
 
   useEffect(() => {
     // Start entry sequences
@@ -225,17 +228,18 @@ const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
   }, []);
 
   const handleRSVPClick = () => {
-    // Placeholder for future form logic
-    console.log("RSVP Protocol Initiated");
+    setShowRSVP(true);
   };
 
   return (
     <Container>
+      {showRSVP && <RSVPForm guestName={guestName} onClose={() => setShowRSVP(false)} />}
       <FileFolder>
+
         <Header>
-          <ClassifiedStamp>機密等級：最高</ClassifiedStamp>
+          <ClassifiedStamp>機密等級：絕對機密</ClassifiedStamp>
           <OperationTitle>
-            行動代號：[新郎名字] & [新娘名字] 的終極結盟
+            行動代號：[新郎名字] & [新娘名字] 終極收束
           </OperationTitle>
         </Header>
 
@@ -244,7 +248,7 @@ const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
         </AgentGreeting>
 
         <BodyText $visible={isLoaded} $delay="0.8s">
-          總部在此發布一項緊急且甜蜜的任務。經過多年的秘密考察與情報確認，兩位頂尖探員 [新郎名字] 與 [新娘名字] 決定啟動「終身合作協議」。您的特殊身份對於見證此一歷史性時刻至關重要。
+          為了確保該世界線的穩定性，避免產生悖論，總部在此發布一項緊急任務。經過多年的秘密考察與情報確認，兩位頂尖探員 [新郎名字] 與 [新娘名字] 決定啟動「終身合作協議」。在跨越無數收束失敗的分歧點，抵達了變動率 1.048596% 的理想世界線，兩位探員成為了對方的專屬觀測者，您的特殊身份對於見證此一歷史性時刻至關重要。
         </BodyText>
 
         <SectionTitle $visible={isLoaded} $delay="1.2s">任務參數:</SectionTitle>
@@ -252,20 +256,20 @@ const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
         <ParameterGrid>
           <ParameterItem $visible={isLoaded} $delay="1.4s">
             <Label>▌ 行動目標</Label>
-            <Value>見證愛的誓言，並加入隨後的慶功宴會。</Value>
+            <Value>作為時空的見證人，確保「幸福收束」順利完成。</Value>
           </ParameterItem>
 
           <ParameterItem $visible={isLoaded} $delay="1.7s">
-            <Label>▌ 接觸時間</Label>
+            <Label>▌ 關鍵觀測點</Label>
             <Value>
               202X 年 XX 月 XX 日 (週X)<br />
-              [入場時間] 報到與情報交流<br />
-              [儀式/開席時間] 行動正式開始
+              [入場時間] 情報交換與報到<br />
+              [儀式/開席時間] 命運收束行動正式開始
             </Value>
           </ParameterItem>
 
           <ParameterItem $visible={isLoaded} $delay="2.0s">
-            <Label>▌ 匯合點座標</Label>
+            <Label>▌ 收束座標</Label>
             <Value>
               [飯店/場地名稱] - [廳房名稱]<br />
               [詳細地址]
