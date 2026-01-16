@@ -234,8 +234,37 @@ const Access: React.FC = () => {
   const [guestName, setGuestName] = useState('DEBUG_AGENT');
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; tx: string; ty: string; size: number; color: string }[]>([]);
 
+  // Security Simulation State with Persistence
+  const [failedAttempts, setFailedAttempts] = useState(() => {
+    return parseInt(localStorage.getItem('access_attempts') || '0', 10);
+  });
+  const [isLocked, setIsLocked] = useState(false);
+
+  useEffect(() => {
+    const lockTime = localStorage.getItem('access_lockout_time');
+    if (lockTime) {
+      const remainingTime = parseInt(lockTime, 10) - Date.now();
+      if (remainingTime > 0) {
+        setIsLocked(true);
+        setStatus({ visible: true, text: 'SECURITY LOCKOUT ACTIVE.' });
+        setTimeout(() => {
+          setIsLocked(false);
+          setFailedAttempts(0);
+          localStorage.removeItem('access_attempts');
+          localStorage.removeItem('access_lockout_time');
+          setStatus({ visible: true, text: 'SYSTEM RESET. READY FOR INPUT.' });
+        }, remainingTime);
+      } else {
+        // Expired while away
+        localStorage.removeItem('access_attempts');
+        localStorage.removeItem('access_lockout_time');
+        setFailedAttempts(0);
+      }
+    }
+  }, []);
+
   const handleEngage = async () => {
-    if (!code.trim() || loading || isSuccess) return;
+    if (!code.trim() || loading || isSuccess || isLocked) return;
 
     setLoading(true);
     setStatus({ visible: false, text: '' });
@@ -255,9 +284,11 @@ const Access: React.FC = () => {
           if (guest) {
             setIsSuccess(true);
             setGuestName(guest.name);
+            localStorage.removeItem('access_attempts'); // Clear security logs on success
+            localStorage.removeItem('access_lockout_time');
             setStatus({
               visible: true,
-              text: `IDENTITY CONFIRMED. WELCOME, ${guest.name.toUpperCase()}.`
+              text: `ACCESS GRANTED: WELCOME, ${guest.name.toUpperCase()}.`
             });
             if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
@@ -276,11 +307,34 @@ const Access: React.FC = () => {
             }, 2000);
 
           } else {
+            // Security Protocol: Failed Attempt Logic
+            const newFailCount = failedAttempts + 1;
+            setFailedAttempts(newFailCount);
+            localStorage.setItem('access_attempts', newFailCount.toString());
             setHasError(true);
-            setStatus({ visible: true, text: 'INVALID ACCESS CODE. TRY AGAIN.' });
-            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+
+            if (newFailCount >= 3) {
+              const lockoutDuration = 10000; // 10s
+              const lockoutExpiry = Date.now() + lockoutDuration;
+
+              setIsLocked(true);
+              localStorage.setItem('access_lockout_time', lockoutExpiry.toString());
+
+              setStatus({ visible: true, text: 'SECURITY LOCKOUT: TOO MANY ATTEMPTS. WAIT 10s.' });
+              setTimeout(() => {
+                setIsLocked(false);
+                setFailedAttempts(0);
+                localStorage.removeItem('access_attempts');
+                localStorage.removeItem('access_lockout_time');
+                setStatus({ visible: true, text: 'SYSTEM RESET. READY FOR INPUT.' });
+              }, lockoutDuration);
+            } else {
+              setStatus({ visible: true, text: `ACCESS DENIED. REMAINING ATTEMPTS: ${3 - newFailCount}` });
+            }
+
+            if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100]);
           }
-        }, 2800);
+        }, 1500 + Math.random() * 1000); // Variable "processing" time for realism
       } catch (error) {
         console.error("Failed to load guest list", error);
         setIsProcessing(false);
@@ -290,6 +344,7 @@ const Access: React.FC = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isLocked) return;
     const val = e.target.value;
     if (val.length < code.length) {
       const charWidth = 14;
@@ -318,12 +373,13 @@ const Access: React.FC = () => {
 
       {view === 'login' ? (
         <Card $isExiting={isExiting}>
-          <TopLabel>Private Access Only</TopLabel>
+          <TopLabel>Private Access Terminal</TopLabel>
           <HackingTitle finalTitle={"Mission:\nMemories with Us"} />
+
           <InputWrapper $active={isFocused} $error={hasError}>
             {particles.map(p => <Particle key={p.id} $x={p.x} $y={p.y} $tx={p.tx} $ty={p.ty} $size={p.size} $color={p.color} />)}
             <StyledInput
-              placeholder="Enter Access Code"
+              placeholder={isLocked ? "LOCKED" : "ENTER CODE"}
               value={code}
               onChange={handleInputChange}
               onFocus={() => setIsFocused(true)}
@@ -331,20 +387,23 @@ const Access: React.FC = () => {
               onKeyDown={(e) => e.key === 'Enter' && handleEngage()}
               maxLength={12}
               autoFocus
+              disabled={isLocked || isProcessing || isSuccess}
             />
           </InputWrapper>
+
           <MissionButton
             onClick={handleEngage}
-            disabled={loading || isSuccess || hasError || !code.trim()}
+            disabled={loading || isSuccess || hasError || !code.trim() || isLocked}
             isSuccess={isSuccess}
-            isActive={(code.trim().length > 0 || loading) && !hasError}
-            isError={hasError}
+            isActive={(code.trim().length > 0 || loading) && !hasError && !isLocked}
+            isError={hasError || isLocked}
             isClicked={loading && !isSuccess && !hasError}
             isProcessing={isProcessing}
           >
-            {isProcessing ? 'Decrypting...' : (isSuccess ? 'Access Granted' : (hasError ? 'RETRY ACCESS' : 'ACCESS'))}
+            {isLocked ? 'LOCKOUT' : (isProcessing ? 'DECRYPTING...' : (isSuccess ? 'GRANTED' : (hasError ? 'RETRY' : 'ACCESS')))}
           </MissionButton>
-          <StatusMsg $visible={status.visible} $isError={hasError}>{status.text}</StatusMsg>
+
+          <StatusMsg $visible={status.visible} $isError={hasError || isLocked}>{status.text}</StatusMsg>
         </Card>
       ) : (
         <Invitation guestName={guestName} />

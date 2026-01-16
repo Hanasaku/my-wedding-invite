@@ -150,6 +150,7 @@ const Label = styled.span`
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 2px;
+  text-shadow: 0 0 5px ${hexToRGBA(palette.goldMain, 0.2)}; // Subtle glow for premium feel
 `;
 
 const Value = styled.div`
@@ -157,6 +158,9 @@ const Value = styled.div`
   color: ${palette.white}; // Bright value
   line-height: 1.8;
   padding-left: 20px;
+  border-left: 1px solid ${hexToRGBA(palette.goldMain, 0.5)}; // More visible by default
+  margin-left: 5px;
+  background: linear-gradient(90deg, ${hexToRGBA(palette.goldMain, 0.05)}, transparent); // Permanent subtle glow
 `;
 
 const RSVPSection = styled.div<{ $visible: boolean }>`
