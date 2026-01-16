@@ -499,7 +499,7 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, onClose }) => {
               <Label>物資特別需求 (Veg Needs / 特殊飲食限制)</Label>
               <InputWrapper>
                 <Input
-                  placeholder="例如：2位素食 / 不吃牛 / 海鮮過敏"
+                  placeholder="例如：2位素食 / 不吃牛 / 不吃雞 / 海鮮過敏"
                   maxLength={100}
                   onFocus={handleInputFocus}
                   onChange={e => setFormData({ ...formData, veg: e.target.value })}

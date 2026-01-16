@@ -13,11 +13,6 @@ const pulseGlow = keyframes`
   50% { box-shadow: 0 0 40px ${hexToRGBA(palette.goldMain, 0.25)}; }
 `;
 
-const scanlineMove = keyframes`
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(400%); }
-`;
-
 const Container = styled.div`
   min-height: 100vh;
   background-color: ${palette.bgPrimary};
