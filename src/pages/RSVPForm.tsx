@@ -13,8 +13,8 @@ const entryReveal = keyframes`
 const Overlay = styled.div`
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(circle at center, rgba(10, 10, 15, 0.85) 0%, rgba(0, 0, 0, 0.98) 100%);
-  backdrop-filter: blur(8px);
+  background: radial-gradient(circle at center, rgba(10, 10, 15, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
+  backdrop-filter: blur(12px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -27,7 +27,7 @@ const FormFrame = styled.div`
   width: 100%;
   max-width: 500px;
   max-height: 85vh; // Dynamic height
-  background: linear-gradient(135deg, ${hexToRGBA(palette.bgCard, 0.9)} 0%, ${hexToRGBA(palette.bgPrimary, 0.95)} 100%);
+  background: ${palette.bgPrimary}; // Solid background for reading clarity
   border: 1px solid ${hexToRGBA(palette.goldMain, 0.3)};
   box-shadow: 
     0 20px 50px -10px rgba(0, 0, 0, 0.8),

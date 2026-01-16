@@ -30,7 +30,7 @@ const particleFly = keyframes`
 
 // Styled Components
 const Container = styled.div`
-  background-color: ${palette.bgPrimary};
+  background-color: transparent;
   color: ${palette.textPrimary};
   overflow-x: hidden;
   overflow-y: auto;
@@ -366,7 +366,7 @@ const Access: React.FC = () => {
 
   return (
     <Container>
-      <StarBackground />
+      <StarBackground showNebula={view === 'login'} />
       <Scanlines />
       <Shutter $state={shutterState} />
       {startMusic && <MissionMusic autoStart={true} />}

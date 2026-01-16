@@ -2,25 +2,56 @@ import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { palette } from '@/assets/styles/palette';
 
-const Canvas = styled.canvas`
+// Image Import
+import nebulaBg from '@/assets/images/nebula-bg.png';
+
+const Container = styled.div`
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 1; 
+  z-index: -1; 
   pointer-events: none;
+  background-color: transparent; // Changed from bgPrimary to allow layering test
+`;
+
+const BackgroundLayer = styled.div<{ $visible: boolean }>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url(${nebulaBg});
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: ${props => props.$visible ? 0.4 : 0};
+  transition: opacity 1.5s ease-in-out;
+`;
+
+const Canvas = styled.canvas`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 `;
 
 /**
  * StarBackground - Responsive Cinematic Edition
  * Optimized visibility for both Mobile and Large Desktop screens.
  */
-const StarBackground: React.FC = () => {
+interface StarBackgroundProps {
+    showNebula?: boolean;
+}
+
+const StarBackground: React.FC<StarBackgroundProps> = ({ showNebula = true }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
         const canvas = canvasRef.current;
+        // ... (rest of logic)
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
@@ -32,23 +63,28 @@ const StarBackground: React.FC = () => {
 
         // Detect if we are on a large screen
         const isDesktop = window.innerWidth > 1024;
-        const particleCount = isDesktop ? 400 : 200; // More stars on large screens
+
+        // PERFORMANCE TUNING: Calibrated for iPhone SE2 (approx 60% load)
+        // 120 particles is rich enough without overheating A13 chips
+        const particleCount = isDesktop ? 400 : 120;
 
         const init = () => {
             w = window.innerWidth;
             h = window.innerHeight;
 
-            // Standard High-DPI Scaling
-            canvas.width = w * dpr;
-            canvas.height = h * dpr;
-            ctx.scale(dpr, dpr);
+            // PERFORMANCE FIX: Cap mobile resolution. High DPI (3x) on mobile kills performance.
+            const safeDpr = isDesktop ? (window.devicePixelRatio || 1) : Math.min(window.devicePixelRatio || 1, 1.5);
+
+            canvas.width = w * safeDpr;
+            canvas.height = h * safeDpr;
+            ctx.scale(safeDpr, safeDpr);
 
             particles = [];
             for (let i = 0; i < particleCount; i++) {
                 // VISIBILITY FIX:
                 const baseSize = isDesktop
                     ? (Math.random() * 2.5 + 0.8)
-                    : (Math.random() * 2.0 + 1.2);
+                    : (Math.random() * 2.5 + 1.5); // Slightly larger stars on mobile for visibility at lower DPR
 
                 // AVOID CENTER SPAWN: Keep center clear to avoid "face-smacking" artifacts
                 // Generate a random angle and a radius ensuring it's not too close to 0
@@ -63,7 +99,7 @@ const StarBackground: React.FC = () => {
                     size: baseSize,
                     speed: isDesktop ? (Math.random() * 0.4 + 0.15) : (Math.random() * 0.2 + 0.05),
                     color: Math.random() > 0.8 ? palette.goldMain : palette.white,
-                    opacity: isDesktop ? (Math.random() * 0.7 + 0.3) : (Math.random() * 0.5 + 0.5),
+                    opacity: isDesktop ? (Math.random() * 0.7 + 0.3) : (Math.random() * 0.6 + 0.4),
                     phase: Math.random() * Math.PI * 2,
                     isGatsby: Math.random() > 0.98,
                 });
@@ -94,12 +130,6 @@ const StarBackground: React.FC = () => {
                 const projectionK = (isDesktop ? 220.0 : 160.0) / p.z;
                 const px = p.x * projectionK + centerX;
                 const py = p.y * projectionK + centerY;
-
-                // OUTWARD WARP: Slightly push x/y away from center as they get closer (z decreases)
-                // This creates the "stars spreading to edges" effect
-                // No need to modify p.x/p.y permanently, just the projection or add a factor visually?
-                // Actually, standard perspective does this, but we can exaggerate it slightly if needed.
-                // With the "center avoidance" spawn logic, standard perspective should look cleaner.
 
                 // Bounds check
                 if (px < -200 || px > w + 200 || py < -200 || py > h + 200) return;
@@ -142,20 +172,17 @@ const StarBackground: React.FC = () => {
                 ctx.arc(px, py, renderedSize, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Long Tether Lines (Trails) - Enhanced for Mobile
-                const lineRange = isDesktop ? 550 : 400; // Visible range for lines
+                // Long Tether Lines (Trails) - Re-enabled for Mobile Se2
+                const lineRange = isDesktop ? 550 : 350; // Shorter range on mobile to save GPU fill-rate
                 if (p.z < lineRange && proximityAlpha > 0.1) {
                     ctx.beginPath();
                     ctx.strokeStyle = palette.goldMain;
-                    // Mobile Trail Boost: Increased opacity multiplier on mobile
-                    const trailOpacity = (1 - p.z / lineRange) * (isDesktop ? 0.12 : 0.15) * currentTwinkle * proximityAlpha;
+
+                    const trailOpacity = (1 - p.z / lineRange) * 0.4 * currentTwinkle * proximityAlpha;
                     ctx.globalAlpha = trailOpacity;
-                    ctx.lineWidth = isDesktop ? 0.6 : 0.5;
+                    ctx.lineWidth = 0.8;
                     ctx.moveTo(px, py);
 
-                    // Trail origin: Instead of center, trace back towards vanishing point but stop short?
-                    // Or just line to center (standard star wars warp).
-                    // Center is fine, but let's make sure it doesn't look messy.
                     ctx.lineTo(centerX, centerY);
                     ctx.stroke();
                 }
@@ -177,7 +204,12 @@ const StarBackground: React.FC = () => {
         };
     }, []);
 
-    return <Canvas ref={canvasRef} id="cinematic-starfield" />;
+    return (
+        <Container>
+            <BackgroundLayer $visible={showNebula} />
+            <Canvas ref={canvasRef} id="cinematic-starfield" />
+        </Container>
+    );
 };
 
 export default StarBackground;

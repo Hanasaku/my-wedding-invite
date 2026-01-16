@@ -15,7 +15,7 @@ const pulseGlow = keyframes`
 
 const Container = styled.div`
   min-height: 100vh;
-  background-color: ${palette.bgPrimary};
+  background-color: transparent;
   color: ${palette.textPrimary};
   padding: 2rem 2rem; // Reduced from 4rem 2rem
   display: flex;
@@ -33,8 +33,8 @@ const Container = styled.div`
 const FileFolder = styled.div`
   max-width: 800px;
   width: 100%;
-  background: ${hexToRGBA(palette.bgCard, 0.85)};
-  backdrop-filter: blur(20px);
+  background: ${hexToRGBA(palette.bgCard, 0.7)}; // More transparent to see stars
+  backdrop-filter: blur(1px); // Less blur to see stars
   border: 1px solid ${hexToRGBA(palette.goldMain, 0.3)};
   padding: 2.5rem 3.5rem; // Reduced top/bottom padding
   position: relative;
@@ -301,7 +301,7 @@ const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
           </Value>
         </RSVPSection>
 
-        <Footer $visible={isLoaded}>期待與您在現場會合。<br />來自總部</Footer>
+        <Footer $visible={isLoaded}>期待與您在現場相聚。<br />來自總部</Footer>
       </FileFolder>
     </Container>
   );
