@@ -293,7 +293,7 @@ const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
           </BodyText>
 
           <MissionButton onClick={handleRSVPClick} isActive={true}>
-            啟動 RSVP 回報傳輸
+            啟動傳輸
           </MissionButton>
 
           <Value style={{ fontSize: '0.8rem', opacity: 0.5, marginTop: '1.5rem', padding: 0 }}>
@@ -301,7 +301,7 @@ const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
           </Value>
         </RSVPSection>
 
-        <Footer $visible={isLoaded}>期待與您在現場匯合。<br />來自總部</Footer>
+        <Footer $visible={isLoaded}>期待與您在現場會合。<br />來自總部</Footer>
       </FileFolder>
     </Container>
   );
