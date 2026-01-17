@@ -628,22 +628,41 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, onClose }) => {
     onClose();
   };
 
-  const proceedToSubmit = () => {
+  const proceedToSubmit = async () => {
     setSubmissionStatus('submitting');
     const cleanData = {
-      ...formData,
+      agentName: guestName,
       alias: sanitizeInput(formData.alias),
+      status: formData.status,
       relation: sanitizeInput(formData.relation),
+      adults: formData.adults,
+      kids: formData.kids,
       veg: sanitizeInput(formData.veg)
     };
 
-    // Simulate encrypted transmission delay
-    setTimeout(() => {
-      console.log("[PROTOCOL] Secure Data Transmitting...", cleanData);
+    // MISSION: Transmission to Google Sheets
+    // TODO: Replace this URL after deploying your Google Apps Script
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzVJAwOqVFt7QA1Q9SZxzauAVay6DiLrMVQhbJrMyw4nSJ-q1QG5ThSu8a-Z3B7bvX2jw/exec';
+
+    try {
+      // We use 'no-cors' for simple Google Script POSTs, or ensure script handles Options
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Standard for simple Apps Script POSTs from different domains
+        cache: 'no-cache',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cleanData),
+      });
+
+      console.log("[PROTOCOL] Data Sent to Command Center.");
       setSubmissionStatus('success');
-      // Auto close after showing success message for a few seconds? 
-      // User might want to read it, so providing a close button in success view is better.
-    }, 1500);
+    } catch (error) {
+      console.error("[CRITICAL] Transmission Failed:", error);
+      alert("傳輸失敗，請檢查網路連線或稍後再試。");
+      setSubmissionStatus('idle');
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -660,7 +679,7 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, onClose }) => {
   };
 
   const handleRetractAbort = () => {
-    setFormData({ ...formData, status: 'deploy' });
+    setFormData({ ...formData, status: 'join' });
     setShowReconsiderModal(false);
     // Optional: Auto submit after changing mind? Or let them click submit again to feel the change?
     // Let's let them click submit again to reaffirm their new commitment.
@@ -721,7 +740,7 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, onClose }) => {
 
         {submissionStatus === 'success' ? (
           <SuccessView>
-            {formData.status === 'deploy' ? (
+            {formData.status === 'join' ? (
               <>
                 <SuccessIcon $sentiment="positive">✦</SuccessIcon>
                 <SuccessTitle $sentiment="positive">MISSION CONFIRMED</SuccessTitle>
@@ -781,13 +800,13 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, onClose }) => {
               <FormGroup>
                 <Label>行動意願 (Commitment)</Label>
                 <RadioGroup>
-                  <RadioLabel $checked={formData.status === 'deploy'} $sentiment="positive">
+                  <RadioLabel $checked={formData.status === 'join'} $sentiment="positive">
                     <input
                       type="radio"
                       name="status"
-                      value="deploy"
+                      value="join"
                       required
-                      checked={formData.status === 'deploy'}
+                      checked={formData.status === 'join'}
                       onChange={e => setFormData({ ...formData, status: e.target.value })}
                     />
                     <span>參與登陸</span>

@@ -233,6 +233,29 @@ const Access: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [guestName, setGuestName] = useState('DEBUG_AGENT');
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; tx: string; ty: string; size: number; color: string }[]>([]);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [initStage, setInitStage] = useState(0);
+
+  const initSteps = [
+    "ESTABLISHING SECURE LINK...",
+    "HANDSHAKING PROTOCOL...",
+    "SYSTEM READY."
+  ];
+
+  useEffect(() => {
+    // Initializing Sequence
+    const timer = setInterval(() => {
+      setInitStage(prev => {
+        if (prev >= initSteps.length - 1) {
+          clearInterval(timer);
+          setTimeout(() => setIsInitializing(false), 500);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 800);
+    return () => clearInterval(timer);
+  }, []);
 
   // Security Simulation State with Persistence
   const [failedAttempts, setFailedAttempts] = useState(() => {
@@ -373,37 +396,48 @@ const Access: React.FC = () => {
 
       {view === 'login' ? (
         <Card $isExiting={isExiting}>
-          <TopLabel>Private Access Terminal</TopLabel>
-          <HackingTitle finalTitle={"Mission:\nMemories with Us"} />
+          {isInitializing ? (
+            <div style={{ minHeight: '300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <TopLabel style={{ marginBottom: '20px' }}>Loading Terminal...</TopLabel>
+              <StatusMsg $visible={true} style={{ animation: 'none', margin: '0', fontSize: '1rem' }}>
+                {'>'} {initSteps[initStage]}
+              </StatusMsg>
+            </div>
+          ) : (
+            <>
+              <TopLabel>Private Access Terminal</TopLabel>
+              <HackingTitle finalTitle={"Mission:\nMemories with Us"} />
 
-          <InputWrapper $active={isFocused} $error={hasError}>
-            {particles.map(p => <Particle key={p.id} $x={p.x} $y={p.y} $tx={p.tx} $ty={p.ty} $size={p.size} $color={p.color} />)}
-            <StyledInput
-              placeholder={isLocked ? "LOCKED" : "ENTER CODE"}
-              value={code}
-              onChange={handleInputChange}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              onKeyDown={(e) => e.key === 'Enter' && handleEngage()}
-              maxLength={12}
-              autoFocus
-              disabled={isLocked || isProcessing || isSuccess}
-            />
-          </InputWrapper>
+              <InputWrapper $active={isFocused} $error={hasError}>
+                {particles.map(p => <Particle key={p.id} $x={p.x} $y={p.y} $tx={p.tx} $ty={p.ty} $size={p.size} $color={p.color} />)}
+                <StyledInput
+                  placeholder={isLocked ? "LOCKED" : "ENTER CODE"}
+                  value={code}
+                  onChange={handleInputChange}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleEngage()}
+                  maxLength={12}
+                  autoFocus
+                  disabled={isLocked || isProcessing || isSuccess}
+                />
+              </InputWrapper>
 
-          <MissionButton
-            onClick={handleEngage}
-            disabled={loading || isSuccess || hasError || !code.trim() || isLocked}
-            isSuccess={isSuccess}
-            isActive={(code.trim().length > 0 || loading) && !hasError && !isLocked}
-            isError={hasError || isLocked}
-            isClicked={loading && !isSuccess && !hasError}
-            isProcessing={isProcessing}
-          >
-            {isLocked ? 'LOCKOUT' : (isProcessing ? 'DECRYPTING...' : (isSuccess ? 'GRANTED' : (hasError ? 'RETRY' : 'ACCESS')))}
-          </MissionButton>
+              <MissionButton
+                onClick={handleEngage}
+                disabled={loading || isSuccess || hasError || !code.trim() || isLocked}
+                isSuccess={isSuccess}
+                isActive={(code.trim().length > 0 || loading) && !hasError && !isLocked}
+                isError={hasError || isLocked}
+                isClicked={loading && !isSuccess && !hasError}
+                isProcessing={isProcessing}
+              >
+                {isLocked ? 'LOCKOUT' : (isProcessing ? 'DECRYPTING...' : (isSuccess ? 'GRANTED' : (hasError ? 'RETRY' : 'ACCESS')))}
+              </MissionButton>
 
-          <StatusMsg $visible={status.visible} $isError={hasError || isLocked}>{status.text}</StatusMsg>
+              <StatusMsg $visible={status.visible} $isError={hasError || isLocked}>{status.text}</StatusMsg>
+            </>
+          )}
         </Card>
       ) : (
         <Invitation guestName={guestName} />
