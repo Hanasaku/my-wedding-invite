@@ -5,6 +5,7 @@ import { palette, hexToRGBA } from '@/assets/styles/palette';
 import StarBackground from '@/components/common/StarBackground';
 import HackingTitle from '@/components/common/HackingTitle';
 import MissionButton from '@/components/common/MissionButton';
+import { useCrypto } from '@/hooks/useCrypto';
 import Invitation from '@/pages/Invitation';
 import MissionMusic from '@/components/common/MissionMusic';
 
@@ -243,30 +244,26 @@ const Particle = styled.div<{ $x: number; $y: number; $tx: string; $ty: string; 
   animation: ${particleFly} 1s ease-out forwards;
 `;
 
-// --- 雜湊工具函式 ---
-const sha256 = async (message: string) => {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-};
-
-// --- 客戶端指紋（防止頻率限制被簡單繞過）---
+// --- 客戶端指紋 (加入 Try-Catch 防止無痕模式 Crash) ---
 const getClientUUID = (): string => {
   const STORAGE_KEY = 'client_device_uuid';
-  let uuid = localStorage.getItem(STORAGE_KEY);
-
-  if (!uuid) {
-    // 產生一個簡單但足夠唯一的 UUID（基於時間戳 + 隨機數）
-    uuid = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-    localStorage.setItem(STORAGE_KEY, uuid);
+  try {
+    let uuid = localStorage.getItem(STORAGE_KEY);
+    if (!uuid) {
+      // 產生一個簡單但足夠唯一的 UUID（基於時間戳 + 隨機數）
+      uuid = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+      localStorage.setItem(STORAGE_KEY, uuid);
+    }
+    return uuid;
+  } catch (e) {
+    // 當無痕模式阻擋 LocalStorage 時，使用隨機 ID
+    return `temp-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`;
   }
-
-  return uuid;
 };
 
 const Access: React.FC = () => {
   const navigate = useNavigate();
+  const { sha256 } = useCrypto();
   const [view, setView] = useState<'login' | 'invitation'>('login');
   const [shutterState, setShutterState] = useState<'none' | 'closing' | 'opening'>('none');
   const [isExiting, setIsExiting] = useState(false);
@@ -335,9 +332,14 @@ const Access: React.FC = () => {
 
   // 安全模擬狀態（持久化）
   const [failedAttempts, setFailedAttempts] = useState(() => {
-    return parseInt(localStorage.getItem('access_attempts') || '0', 10);
+    try {
+      return parseInt(localStorage.getItem('access_attempts') || '0', 10);
+    } catch {
+      return 0;
+    }
   });
   const [isLocked, setIsLocked] = useState(false);
+  const [lockoutTimer, setLockoutTimer] = useState(0);
 
   useEffect(() => {
     const lockTime = localStorage.getItem('access_lockout_time');
@@ -345,14 +347,7 @@ const Access: React.FC = () => {
       const remainingTime = parseInt(lockTime, 10) - Date.now();
       if (remainingTime > 0) {
         setIsLocked(true);
-        setStatus({ visible: true, text: 'SECURITY LOCKOUT ACTIVE.' });
-        setTimeout(() => {
-          setIsLocked(false);
-          setFailedAttempts(0);
-          localStorage.removeItem('access_attempts');
-          localStorage.removeItem('access_lockout_time');
-          setStatus({ visible: true, text: 'SYSTEM RESET. READY FOR INPUT.' });
-        }, remainingTime);
+        setLockoutTimer(Math.ceil(remainingTime / 1000));
       } else {
         // 離開期間已過期
         localStorage.removeItem('access_attempts');
@@ -361,6 +356,29 @@ const Access: React.FC = () => {
       }
     }
   }, []);
+
+  // 處理鎖定倒數
+  useEffect(() => {
+    if (lockoutTimer <= 0) {
+      if (isLocked) {
+        setIsLocked(false);
+        setFailedAttempts(0);
+        localStorage.removeItem('access_attempts');
+        localStorage.removeItem('access_lockout_time');
+        setStatus({ visible: true, text: 'SYSTEM RESET. READY FOR INPUT.' });
+      }
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setLockoutTimer(prev => prev - 1);
+    }, 1000);
+
+    const text = `SECURITY LOCKOUT: RETRY IN ${lockoutTimer}S.`;
+    setStatus({ visible: true, text });
+
+    return () => clearInterval(timer);
+  }, [lockoutTimer, isLocked]);
 
   const handleEngage = async () => {
     if (!code.trim() || loading || isSuccess || isLocked) return;
@@ -378,6 +396,7 @@ const Access: React.FC = () => {
         // 1. 在客戶端對代碼進行雜湊（隱私保護）
         // 代碼已在 handleInputChange 中轉為大寫
         const hashCode = await sha256(code.trim().toUpperCase());
+        const uuid = getClientUUID();
 
         // 2. 將雜湊值傳送至指揮中心
         const API_URL = 'https://script.google.com/macros/s/AKfycbyIw_gVH5-O7KXFbAaTA5t_XHLi4YwSoiusXr0qq__47KilzILOdbxH6o-VYWl2y8gm/exec';
@@ -386,13 +405,11 @@ const Access: React.FC = () => {
         const params = new URLSearchParams();
         params.append('action', 'verify');
         params.append('hash', hashCode);
-        params.append('client_uuid', getClientUUID());
+        params.append('client_uuid', uuid);
 
         const response = await fetch(API_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: params.toString()
         });
 
@@ -451,16 +468,8 @@ const Access: React.FC = () => {
               const lockoutDuration = 10000; // 10 秒
               const lockoutExpiry = Date.now() + lockoutDuration;
               setIsLocked(true);
+              setLockoutTimer(Math.ceil(lockoutDuration / 1000));
               localStorage.setItem('access_lockout_time', lockoutExpiry.toString());
-              setStatus({ visible: true, text: 'SECURITY LOCKOUT: TOO MANY ATTEMPTS. WAIT 10s.' });
-
-              setTimeout(() => {
-                setIsLocked(false);
-                setFailedAttempts(0);
-                localStorage.removeItem('access_attempts');
-                localStorage.removeItem('access_lockout_time');
-                setStatus({ visible: true, text: 'SYSTEM RESET. READY FOR INPUT.' });
-              }, lockoutDuration);
             } else {
               setStatus({ visible: true, text: `ACCESS DENIED. REMAINING ATTEMPTS: ${3 - newFailCount}` });
             }
@@ -468,34 +477,28 @@ const Access: React.FC = () => {
           }
         }, 1000);
 
-      } catch (error) {
-        console.error("Verification protocol failed", error);
-
-        // 安全協定：失敗嘗試邏輯
+      } catch (error: any) {
         setIsProcessing(false);
         setLoading(false);
 
-        const newFailCount = failedAttempts + 1;
-        setFailedAttempts(newFailCount);
-        localStorage.setItem('access_attempts', newFailCount.toString());
-        setHasError(true);
-
-        if (newFailCount >= 3) {
-          // ...（鎖定邏輯保持不變）...
-          const lockoutDuration = 10000; // 10 秒
-          const lockoutExpiry = Date.now() + lockoutDuration;
-          setIsLocked(true);
-          localStorage.setItem('access_lockout_time', lockoutExpiry.toString());
-          setStatus({ visible: true, text: 'SECURITY LOCKOUT: TOO MANY ATTEMPTS. WAIT 10s.' });
-          setTimeout(() => {
-            setIsLocked(false);
-            setFailedAttempts(0);
-            localStorage.removeItem('access_attempts');
-            localStorage.removeItem('access_lockout_time');
-            setStatus({ visible: true, text: 'SYSTEM RESET. READY FOR INPUT.' });
-          }, lockoutDuration);
+        // 如果是 Fetch 失敗，通常是 CORS 或無痕模式攔截
+        if (error.message && (error.message.includes('fetch') || error.name === 'TypeError')) {
+          setStatus({ visible: true, text: 'NETWORK INTERFERENCE DETECTED.' });
         } else {
-          setStatus({ visible: true, text: `ACCESS DENIED. REMAINING ATTEMPTS: ${3 - newFailCount}` });
+          const newFailCount = failedAttempts + 1;
+          setFailedAttempts(newFailCount);
+          localStorage.setItem('access_attempts', newFailCount.toString());
+          setHasError(true);
+
+          if (newFailCount >= 3) {
+            const lockoutDuration = 10000;
+            const lockoutExpiry = Date.now() + lockoutDuration;
+            setIsLocked(true);
+            setLockoutTimer(Math.ceil(lockoutDuration / 1000));
+            localStorage.setItem('access_lockout_time', lockoutExpiry.toString());
+          } else {
+            setStatus({ visible: true, text: `PROTOCOL ERROR. ATTEMPTS: ${3 - newFailCount}` });
+          }
         }
         if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100]);
       }
@@ -582,7 +585,7 @@ const Access: React.FC = () => {
 
               <StatusMsg
                 $visible={status.visible}
-                $isError={hasError || isLocked}
+                $isError={hasError || isLocked || status.text.includes("INTERFERENCE")}
                 $isReset={status.text.includes("SYSTEM RESET")}
               >
                 {status.text}
