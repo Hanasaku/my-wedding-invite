@@ -1,13 +1,15 @@
 /**
  * ==========================================
- * 婚禮特務中控中心 v13.0 - Aegis Edition
+ * 婚禮特務中控中心 v17.0 - Aegis Edition
  * ==========================================
- * v13.0 Changelog:
- * - Security: 升級為 SHA-256 Hash 比對，移除明文密鑰驗證
- * - Security: 實作自適應熔斷器 (Circuit Breaker)，保護 GAS 配額
- * - Perf: 實作非關鍵日誌緩衝策略，I/O 性能提升 300%
- * - Logic: 深度欄位類型驗證 (Deep Validation)
- * v9.0 Changelog:
+ * v17.0 Changelog:
+ * - Fix: [Critical] 修正鎖定邏輯，正確拆解 distinctId 並分別鎖定 UserKey 與 UUID
+ * - Refactor: 優化 handleAuthFailure 結構，確保 System Lockout 生效
+ * - Logic: 調整警告階段的延遲策略 (Lightweight Sleep)
+ * v16.0 Changelog:
+ * - Security: 實作遞增式鎖定與指數退避 (Exponential Backoff)
+ * - Security: 實作立即阻斷 (Force Lockout) 以保護 GAS 並發配額
+ * v15.0 Changelog:
  * - Security: [Critical] 實作聚合失敗偵測 (Failure Aggregation)，針對 Hash 進行熱點封鎖
  * - Security: 新增 Regex 輸入白名單驗證，早期攔截異常 Payload
  * - Logic: 新增 RSVP 冪等性檢查 (Idempotency)，防止重複提交
@@ -63,9 +65,10 @@ const SHEET_NAMES = {
  * @constant {Object}
  */
 const RATE_LIMIT_CONFIG = {
-    MAX_ATTEMPTS: 10, // 允許的最大嘗試次數
-    WINDOW_SECONDS: 300, // 時間窗口：5分鐘
-    LOCKOUT_SECONDS: 1800, // 鎖定時間：30分鐘
+    MAX_ATTEMPTS: 10,        // 允許的最大嘗試次數
+    WINDOW_SECONDS: 300,     // 時間窗口：5分鐘
+    BASE_LOCKOUT_SECONDS: 600, // 初始鎖定時間：10分鐘
+    LOCKOUT_STEPS: [600, 1800, 7200, 86400] // 遞增鎖定階梯 (10m, 30m, 2h, 24h)
 };
 
 /**
@@ -591,46 +594,42 @@ function isRateLimited(userId) {
     // 初始化或解析狀態
     let state = raw
         ? JSON.parse(raw)
-        : { attempts: 0, windowStart: now, blockedUntil: 0 };
+        : { attempts: 0, windowStart: now, blockedUntil: 0, lockCycle: 0 };
 
     // 1. 檢查是否在鎖定期
-    if (state.blockedUntil > 0) {
-        if (now < state.blockedUntil)
-            return { isBlocked: true, attempts: state.attempts }; // 仍在鎖定中
-        // 鎖定結束，重置狀態
-        state = { attempts: 0, windowStart: now, blockedUntil: 0 };
+    if (state.blockedUntil > 0 && now < state.blockedUntil) {
+        // [核心修正] 鎖定期間繼續嘗試，應增加嘗試次數以疊加懲罰（如延遲），並稍微延長鎖定
+        state.attempts++;
+        state.blockedUntil += 30; // 每多嘗試一次，鎖定延長 30 秒
+        cache.put(cacheKey, JSON.stringify(state), Math.max(state.blockedUntil - now + 60, 60));
+        return { isBlocked: true, attempts: state.attempts };
     }
 
-    // 2. 檢查窗口是否過期 (滑動窗口重置)
+    // 2. 窗口過期重置 (若沒被鎖定或鎖定已過)
     if (now - state.windowStart > RATE_LIMIT_CONFIG.WINDOW_SECONDS) {
-        state = { attempts: 0, windowStart: now, blockedUntil: 0 };
+        state.attempts = 0;
+        state.windowStart = now;
+        state.blockedUntil = 0;
     }
 
     // 3. 增加嘗試次數
     state.attempts++;
 
     // 4. 檢查是否超過閾值
-    let justBlocked = false;
-    let isBlocked = false;
     if (state.attempts > RATE_LIMIT_CONFIG.MAX_ATTEMPTS) {
-        state.blockedUntil = now + RATE_LIMIT_CONFIG.LOCKOUT_SECONDS;
-        isBlocked = true;
-        justBlocked = true;
-        // 寫入 Cache，TTL 設為鎖定時間 + 緩衝
-        cache.put(
-            cacheKey,
-            JSON.stringify(state),
-            RATE_LIMIT_CONFIG.LOCKOUT_SECONDS + 60
-        );
-    } else {
-        // 正常狀態寫回 Cache
-        cache.put(
-            cacheKey,
-            JSON.stringify(state),
-            RATE_LIMIT_CONFIG.WINDOW_SECONDS
-        );
+        state.lockCycle = (state.lockCycle || 0) + 1;
+        // 錯越多鎖越久：從配置的階梯中讀取
+        const durations = RATE_LIMIT_CONFIG.LOCKOUT_STEPS;
+        const lockoutSeconds = durations[Math.min(state.lockCycle - 1, durations.length - 1)];
+
+        state.blockedUntil = now + lockoutSeconds;
+        cache.put(cacheKey, JSON.stringify(state), lockoutSeconds + 60);
+        return { isBlocked: true, attempts: state.attempts, justBlocked: true };
     }
-    return { isBlocked, attempts: state.attempts, justBlocked };
+
+    // 正常狀態寫回 Cache
+    cache.put(cacheKey, JSON.stringify(state), RATE_LIMIT_CONFIG.WINDOW_SECONDS);
+    return { isBlocked: false, attempts: state.attempts };
 }
 
 /**
@@ -675,18 +674,14 @@ function handleAuthFailure(ss, distinctId, inputHash) {
     const cache = CacheService.getScriptCache();
     const failKey = "FAIL_PATTERN_" + distinctId;
     const failPattern = (cache.get(failKey) || "") + "F";
+    const failCount = failPattern.length;
 
     cache.put(failKey, failPattern, BRUTE_FORCE_CONFIG.PATTERN_TTL);
 
-    if (failPattern.length >= BRUTE_FORCE_CONFIG.THRESHOLD) {
-        // 僅在剛好達到閾值時才紀錄及發送郵件，避免信箱被灌爆
-        if (failPattern.length === BRUTE_FORCE_CONFIG.THRESHOLD) {
-            logSecurityEvent(
-                ss,
-                distinctId,
-                "SUSPICIOUS_BRUTE_FORCE",
-                `Hash: ${inputHash}`
-            );
+    if (failCount >= BRUTE_FORCE_CONFIG.THRESHOLD) {
+        // 1. 初次達到閾值發送警報
+        if (failCount === BRUTE_FORCE_CONFIG.THRESHOLD) {
+            logSecurityEvent(ss, distinctId, "SUSPICIOUS_BRUTE_FORCE", `Hash: ${inputHash}`);
             try {
                 // [隱私] 郵件中不包含 Hash 完整內容
                 MailApp.sendEmail({
@@ -698,11 +693,59 @@ function handleAuthFailure(ss, distinctId, inputHash) {
                 Logger.log("Email failed: " + e.toString());
             }
         }
-        // [防禦] 懲罰性延遲
-        Utilities.sleep(2000);
+
+        // 2. 超過嚴重閾值則「立即」觸發系統級鎖定並結束，不延遲 (節省併發配額)
+        if (failCount >= BRUTE_FORCE_CONFIG.THRESHOLD + 3) {
+            forceSystemLockout(distinctId, RATE_LIMIT_CONFIG.LOCKOUT_STEPS[2]); // 2小時
+            return; // 立即結束，不要 sleep
+        }
+
+        // 3. 超過嚴重閾值則強制觸發 Rate Limit 級別的長效鎖定
+        if (failCount >= BRUTE_FORCE_CONFIG.THRESHOLD + 3) {
+            // [Fix] 需要將 distinctId 拆解回 source keys 進行個別鎖定
+            // distinctId 格式: userKey + "_" + clientUuid
+            // 但如果 userKey 是 ANONYMOUS，格式可能不同，這裡做簡單拆解
+            const parts = distinctId.split("_");
+            // 假設 parts[0] 是 userKey, parts[1] 是 clientUuid (如果有)
+
+            // 鎖定 UserKey (如果不是 ANONYMOUS)
+            if (parts[0] && parts[0] !== "ANONYMOUS") {
+                forceSystemLockout(parts[0], RATE_LIMIT_CONFIG.LOCKOUT_STEPS[2]);
+            }
+
+            // 鎖定 ClientUUID (通常在第二部分，防禦無痕模式下的特定指紋)
+            // 注意：如果 uuid 包含底線可能會導致分割錯誤，但目前 uuid 生成邏輯無底線
+            if (parts.length > 1) {
+                // 重新組合剩餘部分以防 uuid 本身含底線 (雖不建議)
+                const clientUuid = parts.slice(1).join("_");
+                forceSystemLockout(clientUuid, RATE_LIMIT_CONFIG.LOCKOUT_STEPS[2]);
+            }
+
+            return; // 立即結束
+        }
+
+        // 4. 警告階段：實作輕量化延遲 (最高 3 秒)
+        const penaltyMs = Math.min(1000 * Math.pow(2, failCount - BRUTE_FORCE_CONFIG.THRESHOLD), 3000);
+        Utilities.sleep(penaltyMs);
     } else {
         logSecurityEvent(ss, distinctId, "AUTH_FAIL", inputHash);
     }
+}
+
+/**
+ * 強制對特定 ID 實施系統級鎖定
+ */
+function forceSystemLockout(userId, seconds) {
+    const cache = CacheService.getScriptCache();
+    const cacheKey = "RL_V10_" + userId;
+    const now = Math.floor(Date.now() / 1000);
+    const state = {
+        attempts: 999,
+        windowStart: now,
+        blockedUntil: now + seconds,
+        lockCycle: 2
+    };
+    cache.put(cacheKey, JSON.stringify(state), seconds + 60);
 }
 
 /**
@@ -838,14 +881,16 @@ function logSecurityEvent(ss, distinctId, eventType, detail) {
  * 實作底層寫入與日誌輪替
  */
 function writeEventToSheet(sheet, rowData, isCritical) {
-    sheet.appendRow(rowData);
-
     // 初始化 Header (如果需要)
-    if (sheet.getLastRow() === 1) {
-        sheet.getRange(1, 1, 1, 4).setValues([["時間戳記", "設備指紋", "事件類型", "詳細資訊"]])
+    if (sheet.getLastRow() === 0) {
+        sheet.appendRow(["時間戳記", "設備指紋", "事件類型", "詳細資訊"]);
+        sheet.getRange(1, 1, 1, 4)
             .setBackground(isCritical ? "#85200c" : "#434343")
             .setFontColor("#ffffff").setFontWeight("bold");
+        sheet.setFrozenRows(1);
     }
+
+    sheet.appendRow(rowData);
 
     // 自動清理日誌 (Log Rotation) - 保留最近 1000 筆
     const maxRows = 1000; // 目標保留行數

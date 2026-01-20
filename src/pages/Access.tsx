@@ -153,19 +153,28 @@ const StyledInput = styled.input`
   }
 `;
 
-const StatusMsg = styled.div<{ $visible: boolean; $isError?: boolean }>`
+const StatusMsg = styled.div<{ $visible: boolean; $isError?: boolean; $isReset?: boolean }>`
   margin-top: 1.5rem;
   height: 20px;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 2px;
-  color: ${props => props.$isError ? palette.accentError : palette.goldBright};
-  text-shadow: ${props => props.$isError ? 'none' : `0 0 10px ${palette.goldMain}`};
+  color: ${props => props.$isReset ? palette.goldBright : (props.$isError ? palette.accentError : palette.goldBright)};
+  text-shadow: ${props => props.$isReset ? `0 0 10px ${palette.goldMain}` : (props.$isError ? 'none' : `0 0 10px ${palette.goldMain}`)};
   opacity: ${props => props.$visible ? 1 : 0};
   transform: translateY(${props => props.$visible ? '0' : '10px'});
   transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
   text-transform: uppercase;
   animation: ${props => props.$visible && !props.$isError ? flicker : 'none'} 2s infinite ease-in-out;
+`;
+
+// [FIX] Wrapper for the imported MissionButton to apply local styles
+const StyledMissionButton = styled(MissionButton) <{ $isReset?: boolean }>`
+  /* 
+    您希望在 SYSTEM RESET 時，按鈕依然保持紅橘色的 RETRY (因為 hasError 仍為 true)，
+    直到使用者修改內容。所以這裡不再強制覆蓋為金色。
+    保留此 Wrapper 以備未來需要特殊樣式。
+  */
 `;
 
 const Shutter = styled.div<{ $state: 'none' | 'closing' | 'opening' }>`
@@ -326,7 +335,7 @@ const Access: React.FC = () => {
         const hashCode = await sha256(code.trim().toUpperCase());
 
         // 2. 將雜湊值傳送至指揮中心
-        const API_URL = 'https://script.google.com/macros/s/AKfycby8FYk_P6qlhTkkjz32Y6NJinsFCBCX17nfS04leZMonf-hi-W7lofHhyDlvxMbxaQrCg/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyIw_gVH5-O7KXFbAaTA5t_XHLi4YwSoiusXr0qq__47KilzILOdbxH6o-VYWl2y8gm/exec';
 
         // 使用 URLSearchParams (避免 CORS 預檢請求)
         const params = new URLSearchParams();
@@ -511,19 +520,26 @@ const Access: React.FC = () => {
                 />
               </InputWrapper>
 
-              <MissionButton
+              <StyledMissionButton
                 onClick={handleEngage}
                 disabled={loading || isSuccess || hasError || !code.trim() || isLocked}
                 isSuccess={isSuccess}
                 isActive={(code.trim().length > 0 || loading) && !hasError && !isLocked}
                 isError={hasError || isLocked}
+                $isReset={status.text.includes("SYSTEM RESET")}
                 isClicked={loading && !isSuccess && !hasError}
                 isProcessing={isProcessing}
               >
                 {isLocked ? 'LOCKOUT' : (isProcessing ? 'DECRYPTING...' : (isSuccess ? 'GRANTED' : (hasError ? 'RETRY' : 'ACCESS')))}
-              </MissionButton>
+              </StyledMissionButton>
 
-              <StatusMsg $visible={status.visible} $isError={hasError || isLocked}>{status.text}</StatusMsg>
+              <StatusMsg
+                $visible={status.visible}
+                $isError={hasError || isLocked}
+                $isReset={status.text.includes("SYSTEM RESET")}
+              >
+                {status.text}
+              </StatusMsg>
             </>
           )}
         </Card>

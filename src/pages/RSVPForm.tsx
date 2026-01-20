@@ -644,7 +644,7 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
 
     // MISSION: Transmission to Google Sheets
     // TODO: Replace this URL after deploying your Google Apps Script
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8FYk_P6qlhTkkjz32Y6NJinsFCBCX17nfS04leZMonf-hi-W7lofHhyDlvxMbxaQrCg/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIw_gVH5-O7KXFbAaTA5t_XHLi4YwSoiusXr0qq__47KilzILOdbxH6o-VYWl2y8gm/exec';
 
     try {
       const params = new URLSearchParams();
