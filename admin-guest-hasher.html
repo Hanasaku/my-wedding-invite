@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest List Harmonizer - 賓客名單整理工具</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&family=Quicksand:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* 預設為深色模式 (Midnight Sage) */
+            --bg-color: #121612;
+            --card-bg: #1a1f1a;
+            --primary: #88b091;
+            --primary-glow: rgba(136, 176, 145, 0.2);
+            --accent: #d4a373;
+            --text-main: #e0e6e0;
+            --text-muted: #8d968d;
+            --border: #2a332a;
+            --shadow: rgba(0, 0, 0, 0.4);
+            --input-bg: rgba(255, 255, 255, 0.03);
+            --btn-secondary-bg: rgba(212, 163, 115, 0.08);
+            /* 深色模式：極淡金棕色 */
+            --btn-secondary-text: #121612;
+            /* 深色文字搭配金沙按鈕 */
+            --table-row-bg: rgba(255, 255, 255, 0.02);
+            --table-row-hover: rgba(255, 255, 255, 0.05);
+        }
+
+        :root.light-theme {
+            /* 淺色護眼模式 (Light Sage) */
+            --bg-color: #f4f7f4;
+            --card-bg: #ffffff;
+            --primary: #6b8e6b;
+            --primary-glow: rgba(107, 142, 107, 0.1);
+            --accent: #bc8a5f;
+            --text-main: #3a413a;
+            --text-muted: #707a70;
+            --border: #e0e6e0;
+            --shadow: rgba(107, 142, 107, 0.08);
+            --input-bg: #fafbfb;
+            --btn-secondary-bg: #fffaf5;
+            /* 淺色模式：輕微暖橘底色 */
+            --btn-secondary-text: #ffffff;
+            --table-row-bg: #ffffff;
+            --table-row-hover: #f9fbf9;
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: background-color 0.4s, color 0.4s, border-color 0.4s, box-shadow 0.4s;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Noto Sans TC', 'Quicksand', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 10px 40px var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        /* 主題切換按鈕樣式 */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--primary);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(15deg) scale(1.1);
+            border-color: var(--primary);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            color: var(--primary);
+            margin: 0;
+            letter-spacing: 1px;
+            font-size: 2.2rem;
+            text-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .tagline {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-top: 8px;
+        }
+
+        .input-section {
+            background: var(--input-bg);
+            padding: 24px;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            background: var(--card-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-main);
+            padding: 18px;
+            font-size: 1rem;
+            resize: none;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        button.action-btn {
+            padding: 14px 30px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--bg-color);
+            /* 對比色 */
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+            box-shadow: 0 6px 20px var(--primary-glow);
+        }
+
+        .btn-secondary {
+            background-color: var(--accent);
+            color: var(--btn-secondary-text);
+            border: 1.5px solid var(--accent);
+            box-shadow: 0 4px 15px rgba(212, 163, 115, 0.2);
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 163, 115, 0.3);
+        }
+
+        .result-area {
+            margin-top: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            margin-top: 10px;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 20px;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 16px 20px;
+            background: var(--table-row-bg);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td:first-child {
+            border-left: 1px solid var(--border);
+            border-radius: 12px 0 0 12px;
+        }
+
+        td:last-child {
+            border-right: 1px solid var(--border);
+            border-radius: 0 12px 12px 0;
+        }
+
+        tr:hover td {
+            background: var(--table-row-hover);
+        }
+
+        .hash-cell {
+            font-family: 'Courier New', monospace;
+            color: var(--primary);
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: var(--bg-color);
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 500;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- 主題切換按鈕 -->
+        <div id="themeToggle" class="theme-toggle" title="切換護眼模式">
+            <span id="themeIcon">🌙</span>
+        </div>
+
+        <header>
+            <h1>Guest List Harmonizer</h1>
+            <div class="tagline">🌿 讓繁瑣的格式化過程，像呼吸一樣流暢</div>
+        </header>
+
+        <div class="input-section">
+            <label for="dataInput">請從 Excel 複製「代碼、姓名、關係」三欄貼至下方：</label>
+            <textarea id="dataInput" placeholder="S001 張小明 伴郎
+S002 李大華 伴娘..."></textarea>
+        </div>
+
+        <div class="btn-group">
+            <button class="action-btn btn-primary" onclick="generateHashes()">
+                ✨ 生成名單 (Hash)
+            </button>
+            <button class="action-btn btn-secondary" onclick="copyTableForExcel()">
+                📋 複製 Excel 內容
+            </button>
+        </div>
+
+        <div class="result-area" id="resultArea" style="display: none;">
+            <label>預覽結果：</label>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Code</th>
+                        <th style="width: 35%;">Hash (ID)</th>
+                        <th style="width: 25%;">Name</th>
+                        <th>Relation</th>
+                    </tr>
+                </thead>
+                <tbody id="resultBody"></tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            Designed for busy helpers. Secure client-side processing.
+        </div>
+    </div>
+
+    <div id="toast" class="toast">已為您複製好內容，可以直接貼上 Excel 囉！</div>
+
+    <script>
+        // --- 主題切換邏輯 ---
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        // 檢查偏好設定
+        function initTheme() {
+            const savedTheme = localStorage.getItem('guest-hasher-theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme === 'light' || (!savedTheme && !systemPrefersDark)) {
+                setLightTheme();
+            } else {
+                setDarkTheme();
+            }
+        }
+
+        function setLightTheme() {
+            html.classList.add('light-theme');
+            themeIcon.innerText = '☀️';
+            localStorage.setItem('guest-hasher-theme', 'light');
+        }
+
+        function setDarkTheme() {
+            html.classList.remove('light-theme');
+            themeIcon.innerText = '🌙';
+            localStorage.setItem('guest-hasher-theme', 'dark');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            if (html.classList.contains('light-theme')) {
+                setDarkTheme();
+            } else {
+                setLightTheme();
+            }
+        });
+
+        // 監聽系統主題變更 (如果使用者沒手動設定過)
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('guest-hasher-theme')) {
+                e.matches ? setDarkTheme() : setLightTheme();
+            }
+        });
+
+        initTheme();
+
+        // --- 名單處理邏輯 ---
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message.trim().toUpperCase());
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex.toUpperCase();
+        }
+
+        async function generateHashes() {
+            const input = document.getElementById('dataInput').value;
+            const lines = input.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const tbody = document.getElementById('resultBody');
+            tbody.innerHTML = '';
+
+            if (lines.length === 0) {
+                document.getElementById('resultArea').style.display = 'none';
+                return;
+            }
+
+            for (const line of lines) {
+                const parts = line.split(/[\t]+| {2,}/).map(p => p.trim());
+                const finalParts = parts.length >= 2 ? parts : line.split(' ').map(p => p.trim());
+
+                const code = finalParts[0] || "";
+                const name = finalParts[1] || "";
+                const relation = finalParts[2] || "";
+
+                const hash = code ? await sha256(code) : "";
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${code}</td>
+                    <td class="hash-cell">${hash}</td>
+                    <td style="font-weight: 500;">${name}</td>
+                    <td style="opacity: 0.7;">${relation}</td>
+                `;
+                tbody.appendChild(row);
+            }
+
+            document.getElementById('resultArea').style.display = 'block';
+        }
+
+        function copyTableForExcel() {
+            const rows = document.querySelectorAll('#resultBody tr');
+            if (rows.length === 0) {
+                alert('請先點擊「生成名單」喔！');
+                return;
+            }
+
+            let content = '';
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('td');
+                const line = Array.from(cols).map(c => c.innerText).join('\t');
+                content += line + '\n';
+            });
+
+            navigator.clipboard.writeText(content).then(() => {
+                showToast();
+            });
+        }
+
+        function showToast() {
+            const t = document.getElementById('toast');
+            t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 2500);
+        }
+    </script>
+</body>
+
+</html>
