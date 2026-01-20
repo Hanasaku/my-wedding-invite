@@ -7,7 +7,7 @@ import MissionButton from '@/components/common/MissionButton';
 import Invitation from '@/pages/Invitation';
 import MissionMusic from '@/components/common/MissionMusic';
 
-// Animations
+// 動畫效果
 const shake = keyframes`
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-5px); }
@@ -28,7 +28,7 @@ const particleFly = keyframes`
   100% { transform: translate(var(--tx), var(--ty)) scale(0) rotate(360deg); opacity: 0; }
 `;
 
-// Styled Components
+// 樣式元件
 const Container = styled.div`
   background-color: transparent;
   color: ${palette.textPrimary};
@@ -139,7 +139,7 @@ const StyledInput = styled.input`
   padding: 12px;
   outline: none;
   letter-spacing: 4px;
-  text-transform: uppercase;
+  text-transform: uppercase; // 自動轉換為大寫
   animation: ${flicker} 3s infinite ease-in-out;
 
   &::placeholder {
@@ -218,6 +218,28 @@ const Particle = styled.div<{ $x: number; $y: number; $tx: string; $ty: string; 
   animation: ${particleFly} 1s ease-out forwards;
 `;
 
+// --- 雜湊工具函式 ---
+const sha256 = async (message: string) => {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+// --- 客戶端指紋（防止頻率限制被簡單繞過）---
+const getClientUUID = (): string => {
+  const STORAGE_KEY = 'client_device_uuid';
+  let uuid = localStorage.getItem(STORAGE_KEY);
+
+  if (!uuid) {
+    // 產生一個簡單但足夠唯一的 UUID（基於時間戳 + 隨機數）
+    uuid = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    localStorage.setItem(STORAGE_KEY, uuid);
+  }
+
+  return uuid;
+};
+
 const Access: React.FC = () => {
   const [view, setView] = useState<'login' | 'invitation'>('login');
   const [shutterState, setShutterState] = useState<'none' | 'closing' | 'opening'>('none');
@@ -243,7 +265,7 @@ const Access: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Initializing Sequence
+    // 初始化序列
     const timer = setInterval(() => {
       setInitStage(prev => {
         if (prev >= initSteps.length - 1) {
@@ -257,7 +279,7 @@ const Access: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Security Simulation State with Persistence
+  // 安全模擬狀態（持久化）
   const [failedAttempts, setFailedAttempts] = useState(() => {
     return parseInt(localStorage.getItem('access_attempts') || '0', 10);
   });
@@ -278,7 +300,7 @@ const Access: React.FC = () => {
           setStatus({ visible: true, text: 'SYSTEM RESET. READY FOR INPUT.' });
         }, remainingTime);
       } else {
-        // Expired while away
+        // 離開期間已過期
         localStorage.removeItem('access_attempts');
         localStorage.removeItem('access_lockout_time');
         setFailedAttempts(0);
@@ -298,52 +320,85 @@ const Access: React.FC = () => {
       setIsProcessing(true);
 
       try {
-        const guests = (await import('@/assets/guests.json')).default;
-        const guest = guests.find((g: any) => g.code.toUpperCase() === code.toUpperCase());
+        // --- 安全升級：雲端驗證 ---
+        // 1. 在客戶端對代碼進行雜湊（隱私保護）
+        // 代碼已在 handleInputChange 中轉為大寫
+        const hashCode = await sha256(code.trim());
+
+        // 2. 將雜湊值傳送至指揮中心
+        const API_URL = 'https://script.google.com/macros/s/AKfycby8FYk_P6qlhTkkjz32Y6NJinsFCBCX17nfS04leZMonf-hi-W7lofHhyDlvxMbxaQrCg/exec';
+
+        // 使用 URLSearchParams (避免 CORS 預檢請求)
+        const params = new URLSearchParams();
+        params.append('action', 'verify');
+        params.append('hash', hashCode);
+        params.append('client_uuid', getClientUUID());
+
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: params.toString()
+        });
+
+        // Google Apps Script 通常回傳 JSON 格式
+        // 這裡預期會收到標準的 JSON 回應
+        const result = await response.json();
 
         setTimeout(() => {
           setIsProcessing(false);
           setLoading(false);
-          if (guest) {
+
+          // 檢查驗證是否成功
+          if (result.status === 'success' && result.name) {
+            // === 成功路徑 ===
             setIsSuccess(true);
-            setGuestName(guest.name);
-            localStorage.removeItem('access_attempts'); // Clear security logs on success
+            setGuestName(result.name);
+            // 將關係儲存至 Session Storage 或傳遞給 Invitation 元件（可選：之後實作 context）
+            // 目前僅使用名稱進行歡迎
+
+            // 清除安全鎖定
+            localStorage.removeItem('access_attempts');
             localStorage.removeItem('access_lockout_time');
+            setFailedAttempts(0);
+
             setStatus({
               visible: true,
-              text: `ACCESS GRANTED: WELCOME, ${guest.name.toUpperCase()}.`
+              text: `ACCESS GRANTED: WELCOME, ${result.name.toUpperCase()}.`
             });
             if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
-            // START TRANSITION SEQUENCE
+            // 轉場至邀請函
             setTimeout(() => {
-              setIsExiting(true); // Fade out the card
+              setIsExiting(true);
               setTimeout(() => {
-                setShutterState('closing'); // Close shutters
-                setStartMusic(true); // START MUSIC
+                setShutterState('closing');
+                setStartMusic(true);
                 setTimeout(() => {
-                  setView('invitation'); // Switch to invitation
-                  setShutterState('opening'); // Open shutters
+                  setView('invitation');
+                  setShutterState('opening');
                   setTimeout(() => setShutterState('none'), 800);
                 }, 800);
               }, 600);
             }, 2000);
 
           } else {
-            // Security Protocol: Failed Attempt Logic
+            // === 失敗路徑 ===
+            // 增加失敗次數
             const newFailCount = failedAttempts + 1;
             setFailedAttempts(newFailCount);
             localStorage.setItem('access_attempts', newFailCount.toString());
             setHasError(true);
 
             if (newFailCount >= 3) {
-              const lockoutDuration = 10000; // 10s
+              // 觸發鎖定
+              const lockoutDuration = 10000; // 10 秒
               const lockoutExpiry = Date.now() + lockoutDuration;
-
               setIsLocked(true);
               localStorage.setItem('access_lockout_time', lockoutExpiry.toString());
-
               setStatus({ visible: true, text: 'SECURITY LOCKOUT: TOO MANY ATTEMPTS. WAIT 10s.' });
+
               setTimeout(() => {
                 setIsLocked(false);
                 setFailedAttempts(0);
@@ -354,21 +409,53 @@ const Access: React.FC = () => {
             } else {
               setStatus({ visible: true, text: `ACCESS DENIED. REMAINING ATTEMPTS: ${3 - newFailCount}` });
             }
-
             if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100]);
           }
-        }, 1500 + Math.random() * 1000); // Variable "processing" time for realism
+        }, 1000);
+
       } catch (error) {
-        console.error("Failed to load guest list", error);
+        console.error("Verification protocol failed", error);
+
+        // 安全協定：失敗嘗試邏輯
         setIsProcessing(false);
         setLoading(false);
+
+        const newFailCount = failedAttempts + 1;
+        setFailedAttempts(newFailCount);
+        localStorage.setItem('access_attempts', newFailCount.toString());
+        setHasError(true);
+
+        if (newFailCount >= 3) {
+          // ...（鎖定邏輯保持不變）...
+          const lockoutDuration = 10000; // 10 秒
+          const lockoutExpiry = Date.now() + lockoutDuration;
+          setIsLocked(true);
+          localStorage.setItem('access_lockout_time', lockoutExpiry.toString());
+          setStatus({ visible: true, text: 'SECURITY LOCKOUT: TOO MANY ATTEMPTS. WAIT 10s.' });
+          setTimeout(() => {
+            setIsLocked(false);
+            setFailedAttempts(0);
+            localStorage.removeItem('access_attempts');
+            localStorage.removeItem('access_lockout_time');
+            setStatus({ visible: true, text: 'SYSTEM RESET. READY FOR INPUT.' });
+          }, lockoutDuration);
+        } else {
+          setStatus({ visible: true, text: `ACCESS DENIED. REMAINING ATTEMPTS: ${3 - newFailCount}` });
+        }
+        if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100]);
       }
     }, 800);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isLocked) return;
-    const val = e.target.value;
+
+    // 安全性：白名單過濾 - 僅允許英數字與底線（半形英數字 + 底線）
+    // 防止注入攻擊與 Unicode 漏洞
+    const rawValue = e.target.value;
+    const sanitized = rawValue.replace(/[^A-Za-z0-9_]/g, ''); // 移除白名單外的字元
+    const val = sanitized.toUpperCase(); // 強制轉為大寫
+
     if (val.length < code.length) {
       const charWidth = 14;
       const xOffset = (code.length * charWidth / 2) - charWidth;
