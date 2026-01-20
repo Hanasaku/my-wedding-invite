@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
 import { palette, hexToRGBA } from '@/assets/styles/palette';
 import StarBackground from '@/components/common/StarBackground';
@@ -63,7 +64,7 @@ const Scanlines = styled.div`
   pointer-events: none;
 `;
 
-const Card = styled.div<{ $isExiting?: boolean }>`
+const Card = styled.div<{ $isExiting?: boolean; $isSecretSuccess?: boolean }>`
   position: relative;
   z-index: 10;
   width: 90%;
@@ -80,6 +81,21 @@ const Card = styled.div<{ $isExiting?: boolean }>`
     opacity: 0;
     transform: scale(0.9) translateY(-20px);
     filter: blur(10px);
+  `}
+
+  ${props => props.$isSecretSuccess && css`
+    border-color: ${palette.goldBright};
+    box-shadow: 0 0 50px ${hexToRGBA(palette.goldMain, 0.6)}, 
+                inset 0 0 30px ${hexToRGBA(palette.goldMain, 0.2)};
+    transform: scale(1.02);
+    
+    &::before, &::after {
+      width: 40px;
+      height: 40px;
+      border-width: 3px;
+      border-color: ${palette.goldBright};
+      box-shadow: 0 0 20px ${palette.goldMain};
+    }
   `}
 
   &::before, &::after {
@@ -250,6 +266,7 @@ const getClientUUID = (): string => {
 };
 
 const Access: React.FC = () => {
+  const navigate = useNavigate();
   const [view, setView] = useState<'login' | 'invitation'>('login');
   const [shutterState, setShutterState] = useState<'none' | 'closing' | 'opening'>('none');
   const [isExiting, setIsExiting] = useState(false);
@@ -266,6 +283,34 @@ const Access: React.FC = () => {
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; tx: string; ty: string; size: number; color: string }[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
   const [initStage, setInitStage] = useState(0);
+
+  // --- 隱藏路徑：連點標題 (Five Clicks Entry) ---
+  const [clickCount, setClickCount] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
+  const [isSecretSuccess, setIsSecretSuccess] = useState(false);
+
+  const handleTitleClick = () => {
+    if (isSecretSuccess || isProcessing || isSuccess) return;
+
+    const now = Date.now();
+    let nextCount = 1;
+
+    if (now - lastClickTime < 3000) {
+      nextCount = clickCount + 1;
+    }
+
+    if (nextCount >= 5) {
+      setIsSecretSuccess(true);
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      setTimeout(() => {
+        navigate('/hasher');
+      }, 1200);
+    } else {
+      setClickCount(nextCount);
+      setLastClickTime(now);
+      if (navigator.vibrate) navigator.vibrate(20);
+    }
+  };
 
   const initSteps = [
     "ESTABLISHING SECURE LINK...",
@@ -492,7 +537,7 @@ const Access: React.FC = () => {
       {startMusic && <MissionMusic autoStart={true} />}
 
       {view === 'login' ? (
-        <Card $isExiting={isExiting}>
+        <Card $isExiting={isExiting} $isSecretSuccess={isSecretSuccess}>
           {isInitializing ? (
             <div style={{ minHeight: '300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <TopLabel style={{ marginBottom: '20px' }}>Loading Terminal...</TopLabel>
@@ -502,7 +547,9 @@ const Access: React.FC = () => {
             </div>
           ) : (
             <>
-              <TopLabel>Private Access Terminal</TopLabel>
+              <TopLabel onClick={handleTitleClick} style={{ cursor: 'default', userSelect: 'none' }}>
+                Private Access Terminal
+              </TopLabel>
               <HackingTitle finalTitle={"Mission:\nMemories with Us"} />
 
               <InputWrapper $active={isFocused} $error={hasError}>
