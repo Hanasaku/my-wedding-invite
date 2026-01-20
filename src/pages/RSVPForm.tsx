@@ -586,12 +586,23 @@ const SubmitBtn = styled.button`
   }
 `;
 
+const getClientUUID = (): string => {
+  const STORAGE_KEY = 'client_device_uuid';
+  let uuid = localStorage.getItem(STORAGE_KEY);
+  if (!uuid) {
+    uuid = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    localStorage.setItem(STORAGE_KEY, uuid);
+  }
+  return uuid;
+};
+
 interface RSVPFormProps {
   guestName: string;
+  guestHash: string;
   onClose: () => void;
 }
 
-const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, onClose }) => {
+const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) => {
   const initialFormState = {
     alias: '',
     status: '',
@@ -630,34 +641,40 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, onClose }) => {
 
   const proceedToSubmit = async () => {
     setSubmissionStatus('submitting');
-    const cleanData = {
-      agentName: guestName,
-      alias: sanitizeInput(formData.alias),
-      status: formData.status,
-      relation: sanitizeInput(formData.relation),
-      adults: formData.adults,
-      kids: formData.kids,
-      veg: sanitizeInput(formData.veg)
-    };
 
     // MISSION: Transmission to Google Sheets
     // TODO: Replace this URL after deploying your Google Apps Script
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzVJAwOqVFt7QA1Q9SZxzauAVay6DiLrMVQhbJrMyw4nSJ-q1QG5ThSu8a-Z3B7bvX2jw/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8FYk_P6qlhTkkjz32Y6NJinsFCBCX17nfS04leZMonf-hi-W7lofHhyDlvxMbxaQrCg/exec';
 
     try {
-      // We use 'no-cors' for simple Google Script POSTs, or ensure script handles Options
+      const params = new URLSearchParams();
+      params.append('action', 'rsvp');
+      params.append('hash', guestHash);
+      params.append('client_uuid', getClientUUID());
+      params.append('agentName', guestName);
+      params.append('alias', sanitizeInput(formData.alias));
+      params.append('status', formData.status);
+      params.append('relation', sanitizeInput(formData.relation));
+      params.append('adults', formData.adults);
+      params.append('kids', formData.kids);
+      params.append('veg', sanitizeInput(formData.veg));
+
       const response = await fetch(SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors', // Standard for simple Apps Script POSTs from different domains
-        cache: 'no-cache',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(cleanData),
+        body: params.toString(),
       });
 
-      console.log("[PROTOCOL] Data Sent to Command Center.");
-      setSubmissionStatus('success');
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        console.log("[PROTOCOL] Transmission Success.");
+        setSubmissionStatus('success');
+      } else {
+        throw new Error(result.message || "Unknown error");
+      }
     } catch (error) {
       console.error("[CRITICAL] Transmission Failed:", error);
       alert("傳輸失敗，請檢查網路連線或稍後再試。");

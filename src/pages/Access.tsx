@@ -245,7 +245,6 @@ const Access: React.FC = () => {
   const [shutterState, setShutterState] = useState<'none' | 'closing' | 'opening'>('none');
   const [isExiting, setIsExiting] = useState(false);
   const [startMusic, setStartMusic] = useState(false);
-
   const [isFocused, setIsFocused] = useState(false);
   const [code, setCode] = useState('');
   const [status, setStatus] = useState({ visible: false, text: '' });
@@ -254,6 +253,7 @@ const Access: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [guestName, setGuestName] = useState('DEBUG_AGENT');
+  const [verifiedHash, setVerifiedHash] = useState(''); // Store the verified hash
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; tx: string; ty: string; size: number; color: string }[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
   const [initStage, setInitStage] = useState(0);
@@ -323,7 +323,7 @@ const Access: React.FC = () => {
         // --- 安全升級：雲端驗證 ---
         // 1. 在客戶端對代碼進行雜湊（隱私保護）
         // 代碼已在 handleInputChange 中轉為大寫
-        const hashCode = await sha256(code.trim());
+        const hashCode = await sha256(code.trim().toUpperCase());
 
         // 2. 將雜湊值傳送至指揮中心
         const API_URL = 'https://script.google.com/macros/s/AKfycby8FYk_P6qlhTkkjz32Y6NJinsFCBCX17nfS04leZMonf-hi-W7lofHhyDlvxMbxaQrCg/exec';
@@ -357,6 +357,7 @@ const Access: React.FC = () => {
             setGuestName(result.name);
             // 將關係儲存至 Session Storage 或傳遞給 Invitation 元件（可選：之後實作 context）
             // 目前僅使用名稱進行歡迎
+            setVerifiedHash(hashCode); // Store the hash after successful verification
 
             // 清除安全鎖定
             localStorage.removeItem('access_attempts');
@@ -527,7 +528,7 @@ const Access: React.FC = () => {
           )}
         </Card>
       ) : (
-        <Invitation guestName={guestName} />
+        <Invitation guestName={guestName} guestHash={verifiedHash} />
       )}
     </Container>
   );

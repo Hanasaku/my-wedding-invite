@@ -214,9 +214,10 @@ import RSVPForm from '@/pages/RSVPForm';
 
 interface InvitationProps {
   guestName: string;
+  guestHash: string;
 }
 
-const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
+const Invitation: React.FC<InvitationProps> = ({ guestName, guestHash }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showRSVP, setShowRSVP] = useState(false);
 
@@ -232,7 +233,7 @@ const Invitation: React.FC<InvitationProps> = ({ guestName }) => {
 
   return (
     <Container>
-      {showRSVP && <RSVPForm guestName={guestName} onClose={() => setShowRSVP(false)} />}
+      {showRSVP && <RSVPForm guestName={guestName} guestHash={guestHash} onClose={() => setShowRSVP(false)} />}
       <FileFolder>
 
         <Header>
