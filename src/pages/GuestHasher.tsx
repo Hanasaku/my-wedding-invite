@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import { palette } from '@/assets/styles/palette';
+import { useCrypto } from '@/hooks/useCrypto';
 
 // --- Animations ---
 const fadeIn = keyframes`
@@ -229,14 +230,6 @@ const Toast = styled.div<{ $visible: boolean }>`
   z-index: 1000;
 `;
 
-// --- Utility Functions ---
-const sha256 = async (message: string) => {
-    const msgBuffer = new TextEncoder().encode(message.trim().toUpperCase());
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-};
-
 interface GuestData {
     code: string;
     hash: string;
@@ -245,6 +238,7 @@ interface GuestData {
 }
 
 const GuestHasher: React.FC = () => {
+    const { sha256 } = useCrypto();
     const [isLight, setIsLight] = useState(() => {
         const saved = localStorage.getItem('guest-hasher-theme');
         if (saved) return saved === 'light';
