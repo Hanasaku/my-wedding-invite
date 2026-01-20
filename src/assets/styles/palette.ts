@@ -14,6 +14,7 @@ export const palette = {
     // Accents & Signals
     accentSuccess: '#00ff41',
     accentError: '#E65100', // Sophisticated Amber-Red (Interstellar Style)
+    orangeRed: '#FF4500',
     textPrimary: '#FFFFFF',
     textDim: 'rgba(255, 255, 255, 0.2)',
 

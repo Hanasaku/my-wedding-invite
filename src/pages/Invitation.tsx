@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { palette, hexToRGBA } from '@/assets/styles/palette';
 import MissionButton from '@/components/common/MissionButton';
+import CinemaMap from '@/components/common/CinemaMap';
+import RSVPForm from '@/pages/RSVPForm';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(15px); }
@@ -17,7 +19,7 @@ const Container = styled.div`
   min-height: 100vh;
   background-color: transparent;
   color: ${palette.textPrimary};
-  padding: 2rem 2rem; // Reduced from 4rem 2rem
+  padding: 2rem 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -33,10 +35,10 @@ const Container = styled.div`
 const FileFolder = styled.div`
   max-width: 800px;
   width: 100%;
-  background: ${hexToRGBA(palette.bgCard, 0.7)}; // More transparent to see stars
-  backdrop-filter: blur(1px); // Less blur to see stars
+  background: ${hexToRGBA(palette.bgCard, 0.7)};
+  backdrop-filter: blur(1px);
   border: 1px solid ${hexToRGBA(palette.goldMain, 0.3)};
-  padding: 2.5rem 3.5rem; // Reduced top/bottom padding
+  padding: 2.5rem 3.5rem;
   position: relative;
   box-shadow: 0 0 60px ${hexToRGBA(palette.black, 0.7)};
 
@@ -100,7 +102,7 @@ const BodyText = styled.p<{ $visible: boolean; $delay?: string }>`
   line-height: 2;
   color: ${hexToRGBA(palette.white, 0.85)};
   font-size: 1.05rem;
-  margin-bottom: 2rem; // Reduced from 3.5rem
+  margin-bottom: 2rem;
   text-align: justify;
   opacity: 0;
   ${props => props.$visible && css`
@@ -115,7 +117,7 @@ const SectionTitle = styled.h2<{ $visible: boolean; $delay: string }>`
   padding: 8px 16px;
   border-left: 5px solid ${palette.goldMain};
   background: ${hexToRGBA(palette.goldMain, 0.1)};
-  margin: 2rem 0 1.5rem 0; // Reduced from 3rem 0 2rem 0
+  margin: 2rem 0 1.5rem 0;
   text-transform: uppercase;
   letter-spacing: 3px;
   display: inline-block;
@@ -129,14 +131,14 @@ const SectionTitle = styled.h2<{ $visible: boolean; $delay: string }>`
 const ParameterGrid = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; // Reduced from 2.5rem
-  margin-bottom: 2.5rem; // Reduced from 4rem
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
 `;
 
 const ParameterItem = styled.div<{ $visible: boolean; $delay: string }>`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem; // Reduced from 0.8rem
+  gap: 0.5rem;
   opacity: 0;
   ${props => props.$visible && css`
     animation: ${fadeIn} 0.8s ease-out forwards;
@@ -146,30 +148,30 @@ const ParameterItem = styled.div<{ $visible: boolean; $delay: string }>`
 
 const Label = styled.span`
   font-size: 0.8rem;
-  color: ${hexToRGBA(palette.goldMain, 0.7)}; // Subtle label
+  color: ${hexToRGBA(palette.goldMain, 0.7)};
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 2px;
-  text-shadow: 0 0 5px ${hexToRGBA(palette.goldMain, 0.2)}; // Subtle glow for premium feel
+  text-shadow: 0 0 5px ${hexToRGBA(palette.goldMain, 0.2)};
 `;
 
 const Value = styled.div`
   font-size: 1.1rem;
-  color: ${palette.white}; // Bright value
+  color: ${palette.white};
   line-height: 1.8;
   padding-left: 20px;
-  border-left: 1px solid ${hexToRGBA(palette.goldMain, 0.5)}; // More visible by default
+  border-left: 1px solid ${hexToRGBA(palette.goldMain, 0.5)};
   margin-left: 5px;
-  background: linear-gradient(90deg, ${hexToRGBA(palette.goldMain, 0.05)}, transparent); // Permanent subtle glow
+  background: linear-gradient(90deg, ${hexToRGBA(palette.goldMain, 0.05)}, transparent);
 `;
 
 const RSVPSection = styled.div<{ $visible: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem; // Reduced from 2rem
-  margin-top: 1.5rem; // Reduced from 3rem
-  padding: 2rem 1.5rem; // Reduced from 3.5rem 2rem
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  padding: 2rem 1.5rem;
   border: 2px dashed ${hexToRGBA(palette.goldMain, 0.3)};
   background: ${hexToRGBA(palette.goldMain, 0.03)};
   text-align: center;
@@ -210,7 +212,13 @@ const Footer = styled.div<{ $visible: boolean }>`
   `}
 `;
 
-import RSVPForm from '@/pages/RSVPForm';
+const MapAttachment = styled.div<{ $visible: boolean; $delay: string }>`
+  opacity: 0;
+  ${props => props.$visible && css`
+    animation: ${fadeIn} 1s ease-out forwards;
+    animation-delay: ${props.$delay};
+  `}
+`;
 
 interface InvitationProps {
   guestName: string;
@@ -222,7 +230,6 @@ const Invitation: React.FC<InvitationProps> = ({ guestName, guestHash }) => {
   const [showRSVP, setShowRSVP] = useState(false);
 
   useEffect(() => {
-    // Start entry sequences
     const timer = setTimeout(() => setIsLoaded(true), 100);
     return () => clearTimeout(timer);
   }, []);
@@ -259,7 +266,7 @@ const Invitation: React.FC<InvitationProps> = ({ guestName, guestHash }) => {
             <Value>作為時空的見證人，確保「幸福收束」順利完成。</Value>
           </ParameterItem>
 
-          <ParameterItem $visible={isLoaded} $delay="1.7s">
+          <ParameterItem $visible={isLoaded} $delay="1.6s">
             <Label>▌ 關鍵觀測點</Label>
             <Value>
               202X 年 XX 月 XX 日 (週X)<br />
@@ -268,16 +275,8 @@ const Invitation: React.FC<InvitationProps> = ({ guestName, guestHash }) => {
             </Value>
           </ParameterItem>
 
-          <ParameterItem $visible={isLoaded} $delay="2.0s">
-            <Label>▌ 收束座標</Label>
-            <Value>
-              [飯店/場地名稱] - [廳房名稱]<br />
-              [詳細地址]
-            </Value>
-          </ParameterItem>
-
-          <ParameterItem $visible={isLoaded} $delay="2.3s">
-            <Label>▌ 偽裝要求</Label>
+          <ParameterItem $visible={isLoaded} $delay="1.8s">
+            <Label>▌ 偽裝要求 (Dress Code)</Label>
             <Value>
               正式服裝 / 晚宴裝<br />
               請準備好展現您最迷人的一面。
@@ -285,7 +284,44 @@ const Invitation: React.FC<InvitationProps> = ({ guestName, guestHash }) => {
           </ParameterItem>
         </ParameterGrid>
 
-        <SectionTitle $visible={isLoaded} $delay="2.6s">狀態確認</SectionTitle>
+        <SectionTitle $visible={isLoaded} $delay="2.0s">現場情報 (Field Intel):</SectionTitle>
+
+        <ParameterGrid>
+          <ParameterItem $visible={isLoaded} $delay="2.2s">
+            <Label>▌ 收束座標 (Coordinates)</Label>
+            <Value>
+              香頌私宅洋樓 (Chanson Bistro)<br />
+              台北市中山區建國北路二段64巷4號
+            </Value>
+          </ParameterItem>
+
+          <ParameterItem $visible={isLoaded} $delay="2.4s">
+            <Label>▌ 交通手段 (Infiltration Route)</Label>
+            <Value>
+              <strong>[ 捷運 MRT ]</strong><br />
+              松江南京站 7 號出口，沿南京東路直走至建國北路右轉，步行約 7-10 分鐘即可抵達。<br />
+              <br />
+              <strong>[ 公車 BUS ]</strong><br />
+              ● 南京建國路口：248, 266, 279, 282, 288, 292, 306, 307<br />
+              ● 捷運松江南京站：5, 12, 41, 72, 109, 203, 214, 222, 226<br />
+              ● 長樂里 (建國北路)：298, 紅57<br />
+              <br />
+              <strong>[ 停車 PARKING ]</strong><br />
+              可利用「建國高架停車場」，停至「南京東路－長春路」區段，步行約 3-5 分鐘即可抵達基地。
+            </Value>
+          </ParameterItem>
+        </ParameterGrid>
+
+        <MapAttachment $visible={isLoaded} $delay="2.5s">
+          <CinemaMap
+            lat={25.0539118}
+            lng={121.5363847}
+            venueName="香頌私宅洋樓"
+            address="台北市中山區建國北路二段64巷4號"
+          />
+        </MapAttachment>
+
+        <SectionTitle $visible={isLoaded} $delay="2.8s">狀態確認</SectionTitle>
 
         <RSVPSection $visible={isLoaded}>
           <BodyText $visible={isLoaded} $delay="3s" style={{ marginBottom: '2rem', textAlign: 'center' }}>
