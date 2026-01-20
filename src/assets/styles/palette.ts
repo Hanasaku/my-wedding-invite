@@ -25,6 +25,28 @@ export const palette = {
     // Fonts
     fontTech: "'Rajdhani', sans-serif",
     fontClassy: "'Cinzel', serif",
+
+    // Guest Hasher Tool (Ergonomic Sage Themes)
+    tool: {
+        dark: {
+            bg: '#121612',
+            card: '#1a1f1a',
+            primary: '#88b091',
+            accent: '#d4a373',
+            text: '#e0e6e0',
+            muted: '#8d968d',
+            border: '#2a332a',
+        },
+        light: {
+            bg: '#f4f7f4',
+            card: '#ffffff',
+            primary: '#6b8e6b',
+            accent: '#bc8a5f',
+            text: '#3a413a',
+            muted: '#707a70',
+            border: '#e0e6e0',
+        }
+    }
 };
 
 /**
