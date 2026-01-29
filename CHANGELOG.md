@@ -2,6 +2,21 @@
 
 All notable changes to the "Operation Destiny" Wedding Invitation project will be documented in this file.
 
+## [v0.9.5] - 2026-01-30
+### Feature: 通訊協議重構與邀請系統升級
+**Branch:** `feat/rsvp-refactor-and-email-ux`
+- **邏輯重構**: 建立 `useMissionNetwork` Hook，集中管理 RSVP 提交與 Email 傳輸邏輯，提高架構清晰度。
+- **組件開發**:
+  - 新增 `MissionInput` 通用表單組件，內建戰術風格視覺與自動聚焦滾動邏輯。
+  - 強化 `CinemaMap` 地圖連結 UI，增加金色粗體與光暈效果，提升導航易用性。
+- **Email 備份系統**:
+  - **智慧建議**: 實作 `@` 觸發常用信箱域名（如 gmail.com, yahoo.com.tw）的自動補完選單。
+  - **嚴格驗證**: 新增 Regex 格式檢查，防止無效通訊頻率導致的傳輸失敗。
+  - **冷卻機制**: 實作動態「充能倒數」機制（成功 10s / 失敗 5s），包含動態文字顯示與按鈕狀態降級，確保防誤觸與傳輸穩定。
+- **UX 修正**:
+  - 修正 Mail 狀態重置會連動關閉成功的 MISSION CONFIRMED 視窗之邏輯缺陷。
+  - 統一「維持遠端」冷淡按鈕樣式，確保視覺美感與情感連結的一致性。
+
 ## [Unreleased]
 
 ## [v0.9.0] - 2026-01-21
