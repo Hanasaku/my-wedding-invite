@@ -11,8 +11,8 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 // --- 自定義戰術標記 (橘紅色) ---
 const tacticalIcon = L.divIcon({
-    className: 'tactical-marker-icon',
-    html: `
+  className: 'tactical-marker-icon',
+  html: `
     <div style="
         width: 30px; 
         height: 30px; 
@@ -33,9 +33,9 @@ const tacticalIcon = L.divIcon({
         "></div>
     </div>
     `,
-    iconSize: [30, 30],
-    iconAnchor: [15, 30],
-    popupAnchor: [0, -30]
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -30]
 });
 L.Marker.prototype.options.icon = tacticalIcon;
 
@@ -91,16 +91,35 @@ const MapWrapper = styled.div`
   }
 
   .leaflet-popup-content-wrapper {
-    background: ${palette.bgCard};
+    background: ${palette.bgPrimary};
     color: ${palette.goldMain};
     border-radius: 0;
     border: 1px solid ${palette.goldMain};
-    filter: invert(90%);
+    box-shadow: 0 0 20px ${hexToRGBA(palette.goldMain, 0.2)};
+    font-family: ${palette.fontTech};
+  }
+
+  .leaflet-popup-content {
+    margin: 13px 19px;
+    line-height: 1.4;
+    
+    strong {
+      color: ${palette.white};
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
   }
 
   .leaflet-popup-tip {
-    background: ${palette.goldMain};
-    filter: invert(90%);
+    background: ${palette.bgPrimary};
+    border: 1px solid ${palette.goldMain};
+  }
+
+  .leaflet-popup-close-button {
+    color: ${palette.goldMain} !important;
+    &:hover {
+      color: ${palette.goldBright} !important;
+    }
   }
 
   /* 針對您圈選的區域進行配色修改 */
@@ -136,54 +155,54 @@ const GoogleMapsLink = styled.a`
 `;
 
 interface CinemaMapProps {
-    lat?: number;
-    lng?: number;
-    venueName?: string;
-    address?: string;
+  lat?: number;
+  lng?: number;
+  venueName?: string;
+  address?: string;
 }
 
 const CinemaMap: React.FC<CinemaMapProps> = ({
-    lat = 25.0539118,
-    lng = 121.5363847,
-    venueName = "香頌私宅洋樓",
-    address = "台北市中山區建國北路二段64巷4號"
+  lat = 25.0539118,
+  lng = 121.5363847,
+  venueName = "香頌私宅洋樓",
+  address = "台北市中山區建國北路二段64巷4號"
 }) => {
-    const position: [number, number] = [lat, lng];
+  const position: [number, number] = [lat, lng];
 
-    return (
-        <div style={{ width: '100%', margin: '2rem 0' }}>
-            <MapWrapper>
-                <div className="corner-deco tl" />
-                <div className="corner-deco br" />
-                <MapContainer
-                    center={position}
-                    zoom={16}
-                    scrollWheelZoom={false}
-                    dragging={!('ontouchstart' in window)}
-                >
-                    <TileLayer
-                        attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
-                        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                    />
-                    <Marker position={position}>
-                        <Popup>
-                            <strong>{venueName}</strong><br />
-                            {address}
-                        </Popup>
-                    </Marker>
-                </MapContainer>
-            </MapWrapper>
-            <div style={{ textAlign: 'center' }}>
-                <GoogleMapsLink
-                    href={`https://maps.app.goo.gl/RWTbQVCbeANHPmHZ8`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    [ 請求 Google Map 軌道衛星覆蓋：解析本世界線之收束座標 ]
-                </GoogleMapsLink>
-            </div>
-        </div>
-    );
+  return (
+    <div style={{ width: '100%', margin: '2rem 0' }}>
+      <MapWrapper>
+        <div className="corner-deco tl" />
+        <div className="corner-deco br" />
+        <MapContainer
+          center={position}
+          zoom={16}
+          scrollWheelZoom={false}
+          dragging={!('ontouchstart' in window)}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          />
+          <Marker position={position}>
+            <Popup>
+              <strong>{venueName}</strong><br />
+              {address}
+            </Popup>
+          </Marker>
+        </MapContainer>
+      </MapWrapper>
+      <div style={{ textAlign: 'center' }}>
+        <GoogleMapsLink
+          href={`https://maps.app.goo.gl/RWTbQVCbeANHPmHZ8`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          [ 請求 Google Map 軌道衛星覆蓋：解析本世界線之收束座標 ]
+        </GoogleMapsLink>
+      </div>
+    </div>
+  );
 };
 
 export default CinemaMap;

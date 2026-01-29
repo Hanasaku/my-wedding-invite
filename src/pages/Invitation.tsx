@@ -270,16 +270,38 @@ const Invitation: React.FC<InvitationProps> = ({ guestName, guestHash }) => {
             <Label>▌ 關鍵觀測點</Label>
             <Value>
               202X 年 XX 月 XX 日 (週X)<br />
-              [入場時間] 情報交換與報到<br />
-              [儀式/開席時間] 命運收束行動正式開始
+              [ 入場時間 ] 18:00<br />
+              情報交換與報到<br />
+              <br />
+              [ 儀式 / 開席時間 ] 18:30<br />
+              命運收束行動正式開始
             </Value>
           </ParameterItem>
 
           <ParameterItem $visible={isLoaded} $delay="1.8s">
-            <Label>▌ 偽裝要求 (Dress Code)</Label>
+            <Label>▌ 偽裝密令 (Dress Code)</Label>
             <Value>
-              正式服裝 / 晚宴裝<br />
-              請準備好展現您最迷人的一面。
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', margin: '10px 0 15px 0' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                  <div style={{ width: '40px', height: '40px', background: 'linear-gradient(45deg, #4A4A4A, #757575)', border: `1px solid ${palette.goldMain}`, boxShadow: `0 0 15px ${hexToRGBA(palette.goldMain, 0.3)}` }} />
+                  <span style={{ fontSize: '0.7rem', color: palette.goldMain }}>GREY</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                  <div style={{ width: '40px', height: '40px', background: 'linear-gradient(45deg, #1A237E, #3949AB)', border: `1px solid ${palette.goldMain}`, boxShadow: `0 0 15px ${hexToRGBA(palette.goldMain, 0.3)}` }} />
+                  <span style={{ fontSize: '0.7rem', color: palette.goldMain }}>BLUE</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                  <div style={{ width: '40px', height: '40px', background: 'linear-gradient(45deg, #4A148C, #7B1FA2)', border: `1px solid ${palette.goldMain}`, boxShadow: `0 0 15px ${hexToRGBA(palette.goldMain, 0.3)}` }} />
+                  <span style={{ fontSize: '0.7rem', color: palette.goldMain }}>PURPLE</span>
+                </div>
+                <div style={{ marginLeft: '10px', fontSize: '1.2rem', color: palette.goldBright, fontWeight: 'bold', letterSpacing: '2px' }}>
+                  灰 ‧ 藍 ‧ 紫色系
+                </div>
+              </div>
+              為了與香頌洋樓的法式氛圍相稱，邀請您以此深色調打造您的 Dress Code。<br />
+              <strong style={{ color: palette.accentError, borderBottom: `1px solid ${palette.accentError}`, paddingBottom: '2px' }}>
+                ※ 請避開全黑、全白色系
+              </strong>，讓我們共同完成這幅法式深色調的視覺畫卷。
             </Value>
           </ParameterItem>
         </ParameterGrid>

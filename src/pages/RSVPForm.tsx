@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { palette, hexToRGBA } from '@/assets/styles/palette';
+import { generateGoogleCalendarUrl, downloadIcsFile, CalendarEvent } from '@/utils/calendar';
 
 // --- Cinematic Animations ---
 const entryReveal = keyframes`
@@ -39,6 +40,14 @@ const FormFrame = styled.div`
   overflow: hidden;
   border-radius: 4px;
 
+  @media (max-width: 480px) {
+    max-height: 85dvh;
+    width: 92%;
+    padding: 20px 15px; /* Create safe zone for decorations */
+  }
+
+  padding: 35px; /* Desktop safe zone */
+
   /* Film Grain Texture Effect */
   &::before {
     content: '';
@@ -72,8 +81,8 @@ const FrameDecor = styled.div`
     border: 1px solid ${palette.goldMain};
     transition: all 0.5s ease;
   }
-  &::before { top: 12px; left: 12px; border-right: none; border-bottom: none; }
-  &::after { bottom: 12px; right: 12px; border-left: none; border-top: none; }
+  &::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+  &::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
 `;
 
 const ScrollableContent = styled.div`
@@ -89,8 +98,10 @@ const ScrollableContent = styled.div`
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: ${hexToRGBA(palette.goldMain, 0.4)}; }
   
+  padding: 10px 10px 30px 10px;
+  
   @media (max-width: 480px) {
-    padding: 30px 20px;
+    padding: 5px 5px 20px 5px;
   }
 `;
 
@@ -133,13 +144,13 @@ const SubTitle = styled.div`
 
 const CloseIcon = styled.button`
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 10px;
+  right: 10px;
   background: transparent;
   border: none;
   color: ${hexToRGBA(palette.goldMain, 0.5)};
   cursor: pointer;
-  z-index: 20;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -234,6 +245,10 @@ const RadioGroup = styled.div`
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
 `;
 
 // --- Additional Colors for Emotional Feedback ---
@@ -271,17 +286,32 @@ const shiny = keyframes`
 // --- Styled Components for Success View ---
 
 const SuccessView = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  min-height: 0; /* Fix for Safari flex parent clipping */
+
+  /* Hide scrollbar but keep functional */
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const SuccessInner = styled.div<{ $center?: boolean }>`
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  height: 100%;
+  justify-content: ${props => props.$center ? 'center' : 'flex-start'};
+  min-height: 100%; /* Ensure content can be centered if short */
+  width: 100%;
+  padding: 10px 10px 20px 10px;
   text-align: center;
-  padding: 40px;
-  animation: ${entryReveal} 0.5s ease-out;
 
   @media (max-width: 480px) {
-    padding: 20px;
+    padding: 10px 5px 15px 5px;
   }
 `;
 
@@ -303,66 +333,91 @@ const SuccessIcon = styled.div<{ $sentiment: 'positive' | 'negative' }>`
   animation: ${props => props.$sentiment === 'positive'
     ? css`${lockIn} 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards`
     : css`${sadEntry} 1s ease-out`};
+
+  @media (max-width: 480px) {
+    font-size: ${props => props.$sentiment === 'positive' ? '4rem' : '3rem'};
+    margin-bottom: 10px;
+  }
 `;
 
 const SuccessTitle = styled.h3<{ $sentiment: 'positive' | 'negative' }>`
   font-family: ${palette.fontClassy};
   color: ${props => props.$sentiment === 'positive' ? palette.goldMain : emotionalColors.distant};
-  font-size: ${props => props.$sentiment === 'positive' ? '2.2rem' : '1.5rem'};
-  margin-bottom: 15px;
-  letter-spacing: ${props => props.$sentiment === 'positive' ? '5px' : '2px'};
+  font-size: ${props => props.$sentiment === 'positive' ? '1.8rem' : '1.5rem'};
+  margin-bottom: 25px;
+  letter-spacing: ${props => props.$sentiment === 'positive' ? '3px' : '2px'};
   text-transform: uppercase;
-  border-bottom: 2px solid ${props => props.$sentiment === 'positive' ? hexToRGBA(palette.goldMain, 0.5) : emotionalColors.distantBorder};
-  padding-bottom: 10px;
+  border-bottom: 1px solid ${props => props.$sentiment === 'positive' ? hexToRGBA(palette.goldMain, 0.3) : emotionalColors.distantBorder};
+  padding-bottom: 15px;
   display: inline-block;
+  width: 100%;
+  max-width: 280px;
   
   animation: ${props => props.$sentiment === 'positive'
     ? css`${fadeIn} 0.5s ease-out 0.2s both`
     : css`${sadEntry} 1s ease-out 0.2s both`};
+
+  @media (max-width: 480px) {
+    font-size: ${props => props.$sentiment === 'positive' ? '1.5rem' : '1.2rem'};
+    margin-bottom: 15px;
+  }
 `;
 
 const SuccessMsg = styled.p<{ $sentiment?: 'positive' | 'negative' }>`
   font-family: ${palette.fontTech};
   color: ${props => props.$sentiment === 'negative' ? emotionalColors.distant : hexToRGBA(palette.white, 0.9)};
-  line-height: 1.8;
-  margin-bottom: 40px;
-  font-size: 1rem;
-  max-width: 80%;
+  line-height: 2;
+  margin-bottom: 50px;
+  font-size: 0.95rem;
+  max-width: 90%;
   animation: ${fadeIn} 0.8s ease-out 0.4s both;
+
+  @media (max-width: 480px) {
+    margin-bottom: 30px;
+    line-height: 1.6;
+  }
 `;
 
 const HeroicBtn = styled.button`
   width: 100%;
-  background: linear-gradient(135deg, ${palette.goldMain} 0%, ${palette.goldBright} 100%);
+  background: ${palette.goldMain};
   color: ${palette.bgPrimary};
   border: none;
-  padding: 18px;
+  padding: 16px;
   font-family: ${palette.fontTech};
-  font-size: 1.2rem;
-  font-weight: 900;
-  letter-spacing: 4px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 3px;
   text-transform: uppercase;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 0 30px ${hexToRGBA(palette.goldMain, 0.4)};
-  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   animation: ${fadeIn} 0.5s ease-out 0.6s both;
+  margin-bottom: 20px;
 
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 50px ${hexToRGBA(palette.goldMain, 0.6)};
-    filter: brightness(1.1);
-  }
-  
-  &::after {
+  &::before {
     content: '';
     position: absolute;
-    top: -50%; left: -50%; width: 200%; height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.8), transparent);
-    transform: rotate(45deg) translateY(-100%);
-    animation: ${shiny} 3s infinite;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: 0.5s;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px ${hexToRGBA(palette.goldMain, 0.4)};
+    
+    &::before {
+      left: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   }
 `;
 
@@ -404,6 +459,76 @@ const SadBtn = styled.button`
     opacity: 1;
     background: ${emotionalColors.distantDim};
     /* Intentionally boring interactions */
+  }
+`;
+
+const CalendarWrapper = styled.div`
+  margin: 20px 0 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  padding: 0 10px;
+  animation: ${fadeIn} 0.5s ease-out 0.8s both;
+
+  @media (max-width: 480px) {
+    margin: 10px 0 30px;
+    gap: 10px;
+  }
+`;
+
+const CalendarLabel = styled.div`
+  font-family: ${palette.fontTech};
+  color: ${hexToRGBA(palette.goldMain, 0.6)};
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  
+  &::before, &::after {
+    content: '';
+    height: 1px;
+    width: 30px;
+    background: ${hexToRGBA(palette.goldMain, 0.2)};
+  }
+`;
+
+const CalendarBtnGroup = styled.div`
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+`;
+
+const CalendarBtn = styled.button`
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid ${hexToRGBA(palette.goldMain, 0.3)};
+  color: ${palette.white};
+  padding: 10px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: ${palette.fontTech};
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    background: ${hexToRGBA(palette.goldMain, 0.1)};
+    border-color: ${palette.goldMain};
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px ${hexToRGBA(palette.goldMain, 0.2)};
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 `;
 
@@ -460,8 +585,13 @@ const ModalActionGroup = styled.div`
 const RadioLabel = styled.label<{ $checked: boolean; $sentiment?: 'positive' | 'negative' }>`
   flex: 1;
   min-width: 140px;
+  width: auto; /* Allow auto width on desktop */
   cursor: pointer;
   position: relative;
+  
+  @media (max-width: 480px) {
+    width: 100%; /* Full width on mobile */
+  }
   
   /* Dynamic Color Logic */
   border: 1px solid ${props => props.$checked
@@ -526,6 +656,26 @@ const RadioLabel = styled.label<{ $checked: boolean; $sentiment?: 'positive' | '
     letter-spacing: 1px;
     transition: color 0.3s;
   }
+`;
+
+const Toast = styled.div<{ $visible: boolean }>`
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: ${palette.goldMain};
+  color: ${palette.bgPrimary};
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-family: ${palette.fontTech};
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+  pointer-events: none;
+  opacity: ${props => props.$visible ? 1 : 0};
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+  z-index: 100;
 `;
 
 const Grid = styled.div`
@@ -602,6 +752,14 @@ interface RSVPFormProps {
   onClose: () => void;
 }
 
+const WEDDING_EVENT: CalendarEvent = {
+  title: 'Mission: Wedding Ceremony', // 建議修改：新人名字
+  description: '感謝您參與這場時空收束任務。請準時抵達戰術座標。\n\nDress Code: Formal / Evening Wear',
+  location: '香頌私宅洋樓 (Chanson Bistro), 台北市中山區建國北路二段64巷4號',
+  startTime: '2025-05-20T12:00:00', // TODO: 請替換為正確的 ISO 8601 時間
+  endTime: '2025-05-20T15:00:00',   // TODO: 請替換為正確的 ISO 8601 時間
+};
+
 const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) => {
   const initialFormState = {
     alias: '',
@@ -615,6 +773,13 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
   const [formData, setFormData] = useState(initialFormState);
   const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
   const [showReconsiderModal, setShowReconsiderModal] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+
+  const handleDownloadIcs = () => {
+    downloadIcsFile(WEDDING_EVENT);
+    setToastMsg('檔案已下載，請點開啟動以加入行事曆');
+    setTimeout(() => setToastMsg(''), 4000);
+  };
 
   // Security Protocol: Lock Environment
   React.useEffect(() => {
@@ -757,34 +922,52 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
 
         {submissionStatus === 'success' ? (
           <SuccessView>
-            {formData.status === 'join' ? (
-              <>
-                <SuccessIcon $sentiment="positive">✦</SuccessIcon>
-                <SuccessTitle $sentiment="positive">MISSION CONFIRMED</SuccessTitle>
-                <SuccessMsg>
-                  【傳輸成功】<br />
-                  回報數據已加密並送達總部。<br />
-                  我們期待與您在現場會合。
-                </SuccessMsg>
-                <HeroicBtn onClick={resetAndClose}>確認完成</HeroicBtn>
-              </>
-            ) : (
-              <>
-                <SuccessIcon $sentiment="negative">✖</SuccessIcon>
-                <SuccessTitle $sentiment="negative">SIGNAL LOST</SuccessTitle>
-                <SuccessMsg $sentiment="negative">
-                  【通訊終止】<br />
-                  系統已記錄您的缺席。<br />
-                  雖然遺憾，但仍感謝您的遠端祝福。
-                </SuccessMsg>
+            <SuccessInner $center={formData.status !== 'join'}>
+              {formData.status === 'join' ? (
+                <>
+                  <SuccessIcon $sentiment="positive">✦</SuccessIcon>
+                  <SuccessTitle $sentiment="positive">MISSION CONFIRMED</SuccessTitle>
+                  <SuccessMsg>
+                    【傳輸成功】<br />
+                    回報數據已加密並送達總部。<br />
+                    我們期待與您在現場會合。
+                  </SuccessMsg>
 
-                <RedemptionBtn onClick={() => window.open('https://forms.gle/YOUR_GIFT_FORM_URL', '_blank')}>
-                  🎁 開啟補給 (禮到人不到)
-                </RedemptionBtn>
+                  <CalendarWrapper>
+                    <CalendarLabel>📅 SYNC OPERATIONS (加入行事曆)</CalendarLabel>
+                    <CalendarBtnGroup>
+                      <CalendarBtn onClick={() => window.open(generateGoogleCalendarUrl(WEDDING_EVENT), '_blank')}>
+                        Google
+                      </CalendarBtn>
+                      <CalendarBtn onClick={handleDownloadIcs}>
+                        Apple
+                      </CalendarBtn>
+                      <CalendarBtn onClick={handleDownloadIcs}>
+                        Outlook
+                      </CalendarBtn>
+                    </CalendarBtnGroup>
+                  </CalendarWrapper>
 
-                <SadBtn onClick={resetAndClose}>關閉終端</SadBtn>
-              </>
-            )}
+                  <HeroicBtn onClick={resetAndClose}>確認完成</HeroicBtn>
+                </>
+              ) : (
+                <>
+                  <SuccessIcon $sentiment="negative">✖</SuccessIcon>
+                  <SuccessTitle $sentiment="negative">SIGNAL LOST</SuccessTitle>
+                  <SuccessMsg $sentiment="negative">
+                    【通訊終止】<br />
+                    系統已記錄您的缺席。<br />
+                    雖然遺憾，但仍感謝您的遠端祝福。
+                  </SuccessMsg>
+
+                  <RedemptionBtn onClick={() => window.open('https://forms.gle/YOUR_GIFT_FORM_URL', '_blank')}>
+                    🎁 開啟補給 (禮到人不到)
+                  </RedemptionBtn>
+
+                  <SadBtn onClick={resetAndClose}>關閉終端</SadBtn>
+                </>
+              )}
+            </SuccessInner>
           </SuccessView>
         ) : (
           <ScrollableContent>
@@ -899,8 +1082,13 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
             </form>
           </ScrollableContent>
         )}
+        {submissionStatus !== 'success' && (
+          <></> /* Placeholder for non-success views if needed, currently controlled by submissionStatus toggle above */
+        )}
+
+        <Toast $visible={!!toastMsg}>{toastMsg}</Toast>
       </FormFrame>
-    </Overlay>
+    </Overlay >
   );
 };
 
