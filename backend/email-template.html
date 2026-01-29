@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0a0a0f;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #0a0a0f;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d4af37;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        .content {
+            line-height: 1.6;
+        }
+
+        .briefing-box {
+            background-color: rgba(212, 175, 55, 0.05);
+            border-left: 4px solid #d4af37;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .box-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #d4af37;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 4px;
+        }
+
+        .label {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .value {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #d4af37;
+            color: #0a0a0f !important;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-top: 20px;
+            text-transform: uppercase;
+        }
+
+        .accent-text {
+            color: #d4af37;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Operation Destiny</h1>
+            <div class="subtitle">DECRYPTED SECURE COMMUNICATION // 建立加密連線</div>
+        </div>
+
+        <div class="content">
+            <p>特工 <span class="accent-text">
+                    <?= guestName ?>
+                </span>，</p>
+            <p>總部已接收到您的回報協議。任務資料已存檔至加密雲端空間，以下為您的行動摘要：</p>
+
+            <div class="briefing-box">
+                <div class="box-title">📊 MISSION BRIEFING // 任務簡報</div>
+
+                <div class="data-row">
+                    <span class="label">執行特工</span>
+                    <span class="value">
+                        <?= guestName ?>
+                    </span>
+                </div>
+                <div class="data-row">
+                    <span class="label">行動代號</span>
+                    <span class="value">
+                        <?= alias ?>
+                    </span>
+                </div>
+                <div class="data-row">
+                    <span class="label">行動意願</span>
+                    <span class="value">
+                        <?= statusText ?>
+                    </span>
+                </div>
+                <div class="data-row">
+                    <span class="label">隸屬單位</span>
+                    <span class="value">
+                        <?= relation ?>
+                    </span>
+                </div>
+                <div class="data-row">
+                    <span class="label">登陸人數</span>
+                    <span class="value">
+                        <?= adults ?> 大人 /
+                        <?= kids ?> 小孩
+                    </span>
+                </div>
+                <div class="data-row">
+                    <span class="label">特別需求</span>
+                    <span class="value">
+                        <?= veg ?>
+                    </span>
+                </div>
+            </div>
+
+            <div class="briefing-box">
+                <div class="box-title">📍 DEPLOYMENT COORDINATES // 登陸座標</div>
+                <div
+                    style="text-align: center; margin-bottom: 20px; background: #000; border: 1px solid #d4af37; overflow: hidden; line-height: 0;">
+                    <!-- 戰術地圖：部署後網址為 https://[YOUR_GITHUB_ID].github.io/[REPO_NAME]/map-tactical.png -->
+                    <img src="https://[YOUR_GITHUB_ID].github.io/[REPO_NAME]/map-tactical.png" alt="Tactical Map Card"
+                        style="width: 100%; height: auto; display: block;" />
+                </div>
+                <div class="data-row">
+                    <span class="label">目標名稱</span>
+                    <span class="value">香頌私宅洋樓 (Chanson Palazzo)</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">具體座標</span>
+                    <span class="value">台北市中山區建國北路二段64巷4號</span>
+                </div>
+                <div style="text-align: right; margin-top: 10px;">
+                    <a href="https://maps.app.goo.gl/RWTbQVCbeANHPmHZ8"
+                        style="color: #d4af37; font-size: 11px; text-decoration: underline;">[ 啟動衛星追蹤系統 ]</a>
+                </div>
+            </div>
+
+            <div class="briefing-box">
+                <div class="box-title">🚌 MISSION LOGISTICS // 交通情報</div>
+                <div class="data-row">
+                    <span class="label">捷運 (MRT)</span>
+                    <span class="value">松江南京站 (7號出口) 步行約 8 分鐘</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">公車 (南京建國路口)</span>
+                    <span class="value">306, 307, 292, 282, 652, 棕9, 紅25, 承德幹線</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">公車 (建國北路站)</span>
+                    <span class="value">298, 紅57</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">停車 (PARKING)</span>
+                    <span class="value">建國高架停車場 (南京-長春路段)</span>
+                </div>
+            </div>
+
+            <p>請務必準時抵達指定座標執行登陸任務。若有任何突發狀況，請立即透過安全頻道聯繫總部。</p>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <p style="font-size: 13px; color: rgba(255, 255, 255, 0.7);">[ 重新檢視線上數位邀請函 ]</p>
+                <a href="https://hanasaku-wedding.web.app/" class="btn">進入終端機</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>這是一封自動產生的加密訊息。請勿直接回覆。</p>
+            <p>&copy; 2026 OPERATION DESTINY // ANTI-GRAVITY PROTOCOL</p>
+        </div>
+    </div>
+</body>
+
+</html>

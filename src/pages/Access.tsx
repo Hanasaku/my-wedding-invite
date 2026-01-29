@@ -399,7 +399,7 @@ const Access: React.FC = () => {
         const uuid = getClientUUID();
 
         // 2. 將雜湊值傳送至指揮中心
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyIw_gVH5-O7KXFbAaTA5t_XHLi4YwSoiusXr0qq__47KilzILOdbxH6o-VYWl2y8gm/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxU6oWgSWtW_QMDCtD8y3Y7Kq-R8kjk6IF9fuRc6tZCJKLreiyg4cJSKgcHq8KzJcr5Dg/exec';
 
         // 使用 URLSearchParams (避免 CORS 預檢請求)
         const params = new URLSearchParams();

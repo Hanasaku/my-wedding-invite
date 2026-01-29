@@ -10,6 +10,22 @@ const entryReveal = keyframes`
   100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
 `;
 
+const shiningGlow = keyframes`
+  0%, 100% { 
+    filter: brightness(1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  }
+  50% { 
+    filter: brightness(1.2);
+    box-shadow: 0 0 20px ${hexToRGBA(palette.goldBright, 0.6)}, 0 0 40px ${hexToRGBA(palette.goldMain, 0.4)};
+  }
+`;
+
+const sluggishPulse = keyframes`
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.4; }
+`;
+
 // --- Styled Components ---
 
 const Overlay = styled.div`
@@ -367,6 +383,14 @@ const HeroicBtn = styled.button`
     transform: translateY(1px);
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   }
+
+  &:disabled {
+    opacity: 0.8;
+    background: ${hexToRGBA(palette.goldMain, 0.6)};
+    cursor: wait;
+    transform: none !important;
+    box-shadow: none;
+  }
 `;
 
 const RedemptionBtn = styled.button`
@@ -456,7 +480,8 @@ const MailCommandBar = styled.div`
   border-radius: 2px;
   transition: all 0.3s ease;
   position: relative;
-  overflow: hidden; // Keep content inside
+  /* overflow: visible to allow suggestions dropdown */
+  overflow: visible; 
 
   &:focus-within {
     border-color: ${palette.goldMain};
@@ -509,13 +534,14 @@ const SuggestionsDropdown = styled.div`
   top: 100%;
   left: 0;
   width: 100%;
-  background: rgba(0, 0, 0, 0.95);
-  border: 1px solid ${hexToRGBA(palette.goldMain, 0.3)};
+  background: rgba(10, 10, 10, 0.98);
+  border: 1px solid ${hexToRGBA(palette.goldMain, 0.4)};
   border-top: none;
-  z-index: 10;
-  max-height: 150px;
+  z-index: 1000;
+  max-height: 160px;
   overflow-y: auto;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  text-align: left;
 `;
 
 const SuggestionItem = styled.div`
@@ -537,14 +563,14 @@ const SuggestionItem = styled.div`
   }
 `;
 
-const TechLoader = () => (
+const TechLoader = ({ speed = '1s' }: { speed?: string }) => (
   <svg
     width="16"
     height="16"
     viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    style={{ animation: 'spin 1s linear infinite' }}
+    style={{ animation: `spin ${speed} linear infinite` }}
   >
     <style>
       {`
@@ -566,6 +592,8 @@ const CalendarWrapper = styled.div`
   width: 100%;
   padding: 0 10px;
   animation: ${fadeIn} 0.5s ease-out 0.8s both;
+  position: relative;
+  z-index: 20;
 
   @media (max-width: 480px) {
     margin: 10px 0 30px;
@@ -770,7 +798,10 @@ const Toast = styled.div<{ $visible: boolean }>`
   pointer-events: none;
   opacity: ${props => props.$visible ? 1 : 0};
   transition: opacity 0.3s ease;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 85%;
+  text-align: center;
   z-index: 100;
 `;
 
@@ -785,12 +816,12 @@ const Grid = styled.div`
   }
 `;
 
-const SubmitBtn = styled.button`
+const SubmitBtn = styled.button<{ $sentiment?: 'positive' | 'negative' }>`
   width: 100%;
   margin-top: 20px;
-  background: ${palette.goldMain};
-  color: ${palette.bgPrimary};
-  border: none;
+  background: ${props => props.$sentiment === 'negative' ? hexToRGBA(palette.sentiment.distant, 0.2) : palette.goldMain};
+  color: ${props => props.$sentiment === 'negative' ? hexToRGBA(palette.white, 0.4) : palette.bgPrimary};
+  border: ${props => props.$sentiment === 'negative' ? `1px solid ${hexToRGBA(palette.sentiment.distant, 0.3)}` : 'none'};
   padding: 16px;
   font-family: ${palette.fontTech};
   font-size: 1.1rem;
@@ -801,7 +832,7 @@ const SubmitBtn = styled.button`
   position: relative;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  box-shadow: ${props => props.$sentiment === 'negative' ? 'none' : '0 4px 15px rgba(0,0,0,0.3)'};
 
   &::before {
     content: '';
@@ -810,11 +841,13 @@ const SubmitBtn = styled.button`
     width: 100%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
     transition: 0.5s;
+    display: ${props => props.$sentiment === 'negative' ? 'none' : 'block'};
   }
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px ${hexToRGBA(palette.goldMain, 0.4)};
+    transform: ${props => props.$sentiment === 'negative' ? 'none' : 'translateY(-2px)'};
+    background: ${props => props.$sentiment === 'negative' ? hexToRGBA(palette.sentiment.distant, 0.3) : palette.goldMain};
+    box-shadow: ${props => props.$sentiment === 'negative' ? 'none' : `0 8px 25px ${hexToRGBA(palette.goldMain, 0.4)}`};
     
     &::before {
       left: 100%;
@@ -827,8 +860,22 @@ const SubmitBtn = styled.button`
   }
   
   &:disabled {
-    cursor: not-allowed;
-    filter: grayscale(0.5);
+    cursor: wait;
+    background: ${props => props.$sentiment === 'negative' ? hexToRGBA(palette.sentiment.distant, 0.4) : palette.goldMain};
+    color: ${props => props.$sentiment === 'negative' ? hexToRGBA(palette.white, 0.7) : palette.bgPrimary};
+    transform: none !important;
+    animation: ${props => props.$sentiment === 'negative' ? css`${sluggishPulse} 3s ease-in-out infinite` : css`${shiningGlow} 1.5s ease-in-out infinite`};
+    filter: ${props => props.$sentiment === 'negative' ? 'grayscale(0.6)' : 'none'};
+    
+    &::before {
+      animation: ${props => props.$sentiment === 'negative' ? 'none' : 'sweep 1s infinite linear'};
+      left: 100%;
+    }
+  }
+
+  @keyframes sweep {
+    0% { left: -100%; }
+    100% { left: 100%; }
   }
 `;
 
@@ -862,8 +909,8 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
     status: '',
     relation: '',
     adults: '1',
-    kids: '0',
-    veg: '0'
+    kids: '',
+    veg: ''
   };
 
   // Retrieve hook values
@@ -938,12 +985,17 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
     const success = await sendInviteMail({
       email,
       guestName,
-      status: formData.status
+      status: formData.status,
+      alias: formData.alias,
+      relation: formData.relation,
+      adults: formData.adults || '1',
+      kids: formData.kids || '0',
+      veg: formData.veg || '無'
     });
 
     if (success) {
       setToastMsg('邀請令已加密傳送至指定信箱');
-      setCooldown(15); // Start 15s cooldown
+      setCooldown(10); // Start 10s cooldown
     } else {
       setToastMsg('傳輸失敗，重置系統中...');
       setCooldown(5); // Error cooldown (shorter)
@@ -953,6 +1005,16 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
 
 
   const handleDownloadIcs = () => {
+    // SECURITY ADVISORY: LINE In-App Browser blocks direct Blob downloads.
+    const isLine = /Line/i.test(navigator.userAgent);
+
+    if (isLine) {
+      setToastMsg('⚡ LINE 不支援直接下載：請點右上角「使用預設瀏覽器開啟」再執行。');
+      setTimeout(() => setToastMsg(''), 6000);
+      downloadIcsFile(WEDDING_EVENT);
+      return;
+    }
+
     downloadIcsFile(WEDDING_EVENT);
     setToastMsg('檔案已下載，請點開啟動以加入行事曆');
     setTimeout(() => setToastMsg(''), 4000);
@@ -991,9 +1053,9 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
       alias: sanitizeInput(formData.alias),
       status: formData.status,
       relation: sanitizeInput(formData.relation),
-      adults: formData.adults,
-      kids: formData.kids,
-      veg: sanitizeInput(formData.veg)
+      adults: formData.adults || '1', // Ensure valid number string for backend
+      kids: formData.kids || '0',     // Ensure valid number string for backend
+      veg: sanitizeInput(formData.veg) || '無' // Provide fallback if empty
     });
 
     if (!success) {
@@ -1075,7 +1137,7 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
                   </SuccessMsg>
 
                   <CalendarWrapper>
-                    <CalendarLabel>📅 SYNC OPERATIONS (加入行事曆)</CalendarLabel>
+                    <CalendarLabel>📅 加入行事曆</CalendarLabel>
                     <CalendarBtnGroup>
                       <CalendarBtn onClick={() => window.open(generateGoogleCalendarUrl(WEDDING_EVENT), '_blank')}>
                         Google
@@ -1090,11 +1152,11 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
 
                     {/* Mail Invitation Feature */}
                     <MailContainer>
-                      <CalendarLabel>✉️ SECURE MAIL // 備份傳輸</CalendarLabel>
+                      <CalendarLabel>✉️ 備份傳輸</CalendarLabel>
                       <MailCommandBar>
                         <MailInput
                           type="email"
-                          placeholder="輸入 Email 接收正式邀請函"
+                          placeholder="輸入 Email "
                           value={email}
                           onChange={handleEmailChange}
                         />
@@ -1234,8 +1296,16 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
                 onChange={e => setFormData({ ...formData, veg: e.target.value })}
               />
 
-              <SubmitBtn type="submit" disabled={submissionStatus === 'submitting'} style={{ opacity: submissionStatus === 'submitting' ? 0.7 : 1 }}>
-                {submissionStatus === 'submitting' ? '加密傳輸中...' : '啟動傳輸'}
+              <SubmitBtn
+                type="submit"
+                disabled={submissionStatus === 'submitting'}
+                $sentiment={formData.status === 'abort' ? 'negative' : 'positive'}
+              >
+                {submissionStatus === 'submitting' ? (
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                    加密傳輸中... <TechLoader speed={formData.status === 'abort' ? '6s' : '1s'} />
+                  </span>
+                ) : '啟動傳輸'}
               </SubmitBtn>
             </form>
           </ScrollableContent>

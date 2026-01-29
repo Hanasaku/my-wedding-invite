@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIw_gVH5-O7KXFbAaTA5t_XHLi4YwSoiusXr0qq__47KilzILOdbxH6o-VYWl2y8gm/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxU6oWgSWtW_QMDCtD8y3Y7Kq-R8kjk6IF9fuRc6tZCJKLreiyg4cJSKgcHq8KzJcr5Dg/exec';
 
 export type SubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
 export type MailStatus = 'idle' | 'sending' | 'sent' | 'error';
@@ -22,6 +22,11 @@ interface MailPayload {
     email: string;
     guestName: string;
     status: string;
+    alias: string;
+    relation: string;
+    adults: string;
+    kids: string;
+    veg: string;
 }
 
 export const useMissionNetwork = () => {
@@ -67,6 +72,11 @@ export const useMissionNetwork = () => {
             params.append('email', payload.email);
             params.append('guestName', payload.guestName);
             params.append('status', payload.status);
+            params.append('alias', payload.alias);
+            params.append('relation', payload.relation);
+            params.append('adults', payload.adults);
+            params.append('kids', payload.kids);
+            params.append('veg', payload.veg);
 
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',

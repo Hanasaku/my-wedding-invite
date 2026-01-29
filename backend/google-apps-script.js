@@ -1,15 +1,15 @@
 /**
  * ==========================================
- * 婚禮特務中控中心 v17.0 - Aegis Edition
+ * 婚禮特務中控中心 v18.0 - Aegis Edition
  * ==========================================
- * v17.0 Changelog:
+ * v18.0 Changelog:
  * - Fix: [Critical] 修正鎖定邏輯，正確拆解 distinctId 並分別鎖定 UserKey 與 UUID
  * - Refactor: 優化 handleAuthFailure 結構，確保 System Lockout 生效
  * - Logic: 調整警告階段的延遲策略 (Lightweight Sleep)
- * v16.0 Changelog:
+ * v17.0 Changelog:
  * - Security: 實作遞增式鎖定與指數退避 (Exponential Backoff)
  * - Security: 實作立即阻斷 (Force Lockout) 以保護 GAS 並發配額
- * v15.0 Changelog:
+ * v16.0 Changelog:
  * - Security: [Critical] 實作聚合失敗偵測 (Failure Aggregation)，針對 Hash 進行熱點封鎖
  * - Security: 新增 Regex 輸入白名單驗證，早期攔截異常 Payload
  * - Logic: 新增 RSVP 冪等性檢查 (Idempotency)，防止重複提交
@@ -110,7 +110,7 @@ const VALIDATORS = {
     // 僅允許英數與底線，防止特殊字元注入
     HASH: /^[A-Fa-f0-9]{64}$/,
     // 允許的動作列表
-    ACTIONS: /^(verify|rsvp)$/
+    ACTIONS: /^(verify|rsvp|send_mail)$/
 };
 
 // ==========================================
@@ -353,7 +353,13 @@ function doPost(e) {
             } finally {
                 lock.releaseLock();
             }
-        } else {
+        }
+
+        // [動作: 發送邀請郵件]
+        else if (action === "send_mail") {
+            return handleSendInviteMail(data, distinctId);
+        }
+        else {
             return createJSON({ status: "error", message: "NO_ACTION" });
         }
     } catch (error) {
@@ -787,6 +793,46 @@ function handleRsvpSubmission(ss, data, distinctId) {
 
     logSecurityEvent(ss, distinctId, "RSVP_SUBMIT", data.agentName || "Unknown");
     return createJSON({ status: "success" });
+}
+
+/**
+ * 處理邀請郵件發送
+ * @param {Object} data 
+ * @param {string} distinctId 
+ */
+function handleSendInviteMail(data, distinctId) {
+    if (!data.email) return createJSON({ status: "error", message: "MISSING_EMAIL" });
+
+    try {
+        // 建立 HTML 範本 (需確保 GAS 專案內有 email-template.html)
+        const htmlTemplate = HtmlService.createTemplateFromFile('email-template');
+
+        // 綁定動態數據
+        htmlTemplate.guestName = data.guestName || "特工";
+        htmlTemplate.alias = data.alias || "未知";
+        htmlTemplate.statusText = data.status === 'join' ? '參與登陸 (JOIN)' : '遠端祝賀 (ABORT)';
+        htmlTemplate.relation = data.relation || "未知";
+        htmlTemplate.adults = data.adults || "0";
+        htmlTemplate.kids = data.kids || "0";
+        htmlTemplate.veg = data.veg || "無特別需求";
+
+        const htmlBody = htmlTemplate.evaluate().getContent();
+
+        // 執行發信
+        MailApp.sendEmail({
+            to: data.email,
+            subject: "【任務通報】Operation Destiny：正式邀請函已解密",
+            htmlBody: htmlBody
+        });
+
+        const ss = SpreadsheetApp.openById(SHEET_ID);
+        logSecurityEvent(ss, distinctId, "MAIL_SENT", `To: ${data.email}`);
+
+        return createJSON({ status: "success" });
+    } catch (error) {
+        Logger.log("Mail Send Error: " + error.toString());
+        return createJSON({ status: "error", message: "MAIL_SERVICE_ERROR", detail: error.toString() });
+    }
 }
 
 /**

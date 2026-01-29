@@ -5,9 +5,9 @@
 ## 📁 檔案說明
 
 - **`google-apps-script.js`**: 完整的 GAS 後端程式碼
-  - 版本: v11.0 - Aegis Edition
+  - 版本: v18.0 - Email System Edition
   - 安全評分: Master Level (10/10)
-  - Black Hat 突破難度: ⭐⭐⭐⭐⭐
+- **`email-template.html`**: 戰術風格邀請函郵件範本
 
 ## 🚀 部署步驟
 
@@ -26,6 +26,10 @@
 2. 刪除預設的 `Code.gs` 內容
 3. 複製 `google-apps-script.js` 的全部內容並貼上
 4. **存檔** (Ctrl+S)
+5. 在左側列表點擊 **[+]** 新增檔案，選擇 **HTML**
+6. 檔案名稱輸入：`email-template`（注意不要副檔名）
+7. 複製 `email-template.html` 的內容並取代預設內容
+8. **存檔**
 
 ### 3. 設定環境變數（Script Properties）
 
@@ -152,6 +156,7 @@ GET https://YOUR_WEB_APP_URL/exec?action=health_check&admin_key=YOUR_SECRET
 記錄事件：
 - `AUTH_FAIL` - 登入失敗
 - `RSVP_SUBMIT` - RSVP 提交
+- `MAIL_SENT` - 成功發送備份郵件
 
 ### 自動清理
 - 兩份日誌各保留最近 1000 筆記錄
@@ -231,6 +236,6 @@ Check Logs for details.
 
 ---
 
-**版本**: v11.0 - Aegis Edition  
-**最後更新**: 2026-01-20  
+**版本**: v18.0 - Email System Edition  
+**最後更新**: 2026-01-30  
 **安全評級**: ⭐⭐⭐⭐⭐ Master Level
