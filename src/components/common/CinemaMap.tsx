@@ -198,7 +198,7 @@ const CinemaMap: React.FC<CinemaMapProps> = ({
           target="_blank"
           rel="noopener noreferrer"
         >
-          [ 請求 Google Map 軌道衛星覆蓋：解析本世界線之收束座標 ]
+          [ 請求 <span style={{ fontSize: '1.2em', fontWeight: 800, color: palette.goldBright, textShadow: `0 0 10px ${palette.goldMain}` }}>Google Map</span> 軌道衛星覆蓋：解析本世界線之收束座標 ]
         </GoogleMapsLink>
       </div>
     </div>

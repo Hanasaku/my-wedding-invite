@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { palette, hexToRGBA } from '@/assets/styles/palette';
 import { generateGoogleCalendarUrl, downloadIcsFile, CalendarEvent } from '@/utils/calendar';
+import { useMissionNetwork } from '@/hooks/useMissionNetwork';
 
 // --- Cinematic Animations ---
 const entryReveal = keyframes`
@@ -171,13 +172,14 @@ const CloseIcon = styled.button`
 
 // --- Form Elements ---
 
-const FormGroup = styled.div`
-  margin-bottom: 24px;
-  position: relative;
-`;
+import MissionInput from '@/components/common/MissionInput';
 
-const Label = styled.label`
-  display: block;
+// ... (Overlay, FormFrame, etc. remain unchanged)
+
+// --- Form Elements ---
+
+// Helper styled component for the radio section label
+const SectionLabel = styled.div`
   font-family: ${palette.fontTech};
   font-size: 0.75rem;
   color: ${hexToRGBA(palette.goldMain, 0.8)};
@@ -189,56 +191,8 @@ const Label = styled.label`
   justify-content: space-between;
 `;
 
-const InputWrapper = styled.div`
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0%;
-    height: 1px;
-    background: ${palette.goldBright};
-    transition: width 0.4s ease;
-    box-shadow: 0 0 10px ${palette.goldMain};
-  }
-
-  &:focus-within::after {
-    width: 100%;
-  }
-`;
-
-const Input = styled.input`
-  width: 100%;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 2px; // Classic tech look
-  padding: 12px 14px;
-  font-family: ${palette.fontTech};
-  font-size: 1.05rem;
-  color: ${palette.white};
-  outline: none;
-  transition: all 0.3s ease;
-  letter-spacing: 1px;
-
-  &::placeholder {
-    color: rgba(255,255,255,0.2);
-    font-style: italic;
-    font-size: 0.9rem;
-  }
-
-  &:focus {
-    background: rgba(255,255,255,0.06);
-    border-color: ${hexToRGBA(palette.goldMain, 0.4)};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    background: transparent;
-    border-style: dotted;
-    color: ${palette.goldMuted};
-  }
+const RadioSection = styled.div`
+  margin-bottom: 24px;
 `;
 
 const RadioGroup = styled.div`
@@ -251,13 +205,7 @@ const RadioGroup = styled.div`
   }
 `;
 
-// --- Additional Colors for Emotional Feedback ---
-const emotionalColors = {
-  active: palette.goldMain,
-  distant: '#607d8b', // Steel Blue Grey - Cold, detached, disappointed
-  distantDim: 'rgba(96, 125, 139, 0.1)',
-  distantBorder: 'rgba(96, 125, 139, 0.3)'
-};
+
 
 // --- Animations ---
 const lockIn = keyframes`
@@ -317,7 +265,7 @@ const SuccessInner = styled.div<{ $center?: boolean }>`
 
 const SuccessIcon = styled.div<{ $sentiment: 'positive' | 'negative' }>`
   font-size: ${props => props.$sentiment === 'positive' ? '6rem' : '4rem'};
-  color: ${props => props.$sentiment === 'positive' ? palette.goldMain : emotionalColors.distant};
+  color: ${props => props.$sentiment === 'positive' ? palette.goldMain : palette.sentiment.distant};
   margin-bottom: 20px;
   
   /* Heroic Sentiment: Intense Glow and Animation */
@@ -342,12 +290,12 @@ const SuccessIcon = styled.div<{ $sentiment: 'positive' | 'negative' }>`
 
 const SuccessTitle = styled.h3<{ $sentiment: 'positive' | 'negative' }>`
   font-family: ${palette.fontClassy};
-  color: ${props => props.$sentiment === 'positive' ? palette.goldMain : emotionalColors.distant};
+  color: ${props => props.$sentiment === 'positive' ? palette.goldMain : palette.sentiment.distant};
   font-size: ${props => props.$sentiment === 'positive' ? '1.8rem' : '1.5rem'};
   margin-bottom: 25px;
   letter-spacing: ${props => props.$sentiment === 'positive' ? '3px' : '2px'};
   text-transform: uppercase;
-  border-bottom: 1px solid ${props => props.$sentiment === 'positive' ? hexToRGBA(palette.goldMain, 0.3) : emotionalColors.distantBorder};
+  border-bottom: 1px solid ${props => props.$sentiment === 'positive' ? hexToRGBA(palette.goldMain, 0.3) : hexToRGBA(palette.sentiment.distant, 0.3)};
   padding-bottom: 15px;
   display: inline-block;
   width: 100%;
@@ -365,7 +313,7 @@ const SuccessTitle = styled.h3<{ $sentiment: 'positive' | 'negative' }>`
 
 const SuccessMsg = styled.p<{ $sentiment?: 'positive' | 'negative' }>`
   font-family: ${palette.fontTech};
-  color: ${props => props.$sentiment === 'negative' ? emotionalColors.distant : hexToRGBA(palette.white, 0.9)};
+  color: ${props => props.$sentiment === 'negative' ? palette.sentiment.distant : hexToRGBA(palette.white, 0.9)};
   line-height: 2;
   margin-bottom: 50px;
   font-size: 0.95rem;
@@ -444,8 +392,8 @@ const RedemptionBtn = styled.button`
 const SadBtn = styled.button`
   width: 100%;
   background: transparent;
-  border: 1px solid ${emotionalColors.distantBorder};
-  color: ${emotionalColors.distant};
+  border: 1px solid ${hexToRGBA(palette.sentiment.distant, 0.3)};
+  color: ${palette.sentiment.distant};
   padding: 14px;
   font-family: ${palette.fontTech};
   font-size: 0.9rem;
@@ -457,10 +405,158 @@ const SadBtn = styled.button`
 
   &:hover {
     opacity: 1;
-    background: ${emotionalColors.distantDim};
+    background: ${hexToRGBA(palette.sentiment.distant, 0.1)};
     /* Intentionally boring interactions */
   }
 `;
+
+// New Button for Modal matching SadBtn style
+const ModalSadBtn = styled.button`
+  width: 100%;
+  background: transparent;
+  border: 1px solid ${hexToRGBA(palette.sentiment.distant, 0.3)};
+  color: ${palette.sentiment.distant};
+  padding: 12px;
+  font-family: ${palette.fontTech};
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s;
+  opacity: 0.8;
+  margin-top: 10px;
+
+  &:hover {
+    opacity: 1;
+    background: ${hexToRGBA(palette.sentiment.distant, 0.1)};
+    border-color: ${palette.sentiment.distant};
+    box-shadow: 0 0 10px ${hexToRGBA(palette.sentiment.distant, 0.2)};
+  }
+`;
+
+// --- Refined Tech Components ---
+
+const MailContainer = styled.div`
+  margin-top: 30px;
+  padding-top: 25px;
+  border-top: 1px solid ${hexToRGBA(palette.goldMain, 0.15)};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+`;
+
+const MailCommandBar = styled.div`
+  display: flex;
+  width: 100%;
+  max-width: 320px; /* Constrain width for better aesthetic */
+  height: 44px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid ${hexToRGBA(palette.goldMain, 0.3)};
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden; // Keep content inside
+
+  &:focus-within {
+    border-color: ${palette.goldMain};
+    box-shadow: 0 0 15px ${hexToRGBA(palette.goldMain, 0.15)};
+  }
+`;
+
+const MailInput = styled.input`
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: ${palette.white};
+  font-family: ${palette.fontTech};
+  font-size: 0.9rem;
+  padding: 0 15px;
+  outline: none;
+  min-width: 0; // Fix flex child overflow
+  letter-spacing: 0.5px;
+  
+  &::placeholder {
+    color: ${hexToRGBA(palette.white, 0.3)};
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+  }
+`;
+
+const MailActionBtn = styled.button<{ $status: 'idle' | 'sending' | 'sent' | 'error' }>`
+  background: ${props => props.$status === 'sent' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
+  border: none;
+  border-left: 1px solid ${props => props.$status === 'sent' ? hexToRGBA(palette.white, 0.2) : hexToRGBA(palette.goldMain, 0.3)};
+  color: ${props => props.$status === 'sent' ? hexToRGBA(palette.white, 0.5) : palette.goldMain};
+  font-family: ${palette.fontTech};
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0 20px;
+  cursor: ${props => (props.$status === 'idle' || props.$status === 'error') ? 'pointer' : 'not-allowed'};
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+
+  &:hover {
+    background: ${props => props.$status === 'idle' ? hexToRGBA(palette.goldMain, 0.1) : 'auto'};
+  }
+`;
+
+const SuggestionsDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid ${hexToRGBA(palette.goldMain, 0.3)};
+  border-top: none;
+  z-index: 10;
+  max-height: 150px;
+  overflow-y: auto;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+`;
+
+const SuggestionItem = styled.div`
+  padding: 10px 15px;
+  color: ${palette.white};
+  font-family: ${palette.fontTech};
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid ${hexToRGBA(palette.goldMain, 0.1)};
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: ${hexToRGBA(palette.goldMain, 0.2)};
+    color: ${palette.goldMain};
+  }
+`;
+
+const TechLoader = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ animation: 'spin 1s linear infinite' }}
+  >
+    <style>
+      {`
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+      `}
+    </style>
+    {/* Background Track */}
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
+    {/* Spinning Indicator (Half Circle) */}
+    <path d="M12 2C6.47715 2 2 6.47715 2 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+  </svg>
+);
 
 const CalendarWrapper = styled.div`
   margin: 20px 0 60px;
@@ -595,12 +691,12 @@ const RadioLabel = styled.label<{ $checked: boolean; $sentiment?: 'positive' | '
   
   /* Dynamic Color Logic */
   border: 1px solid ${props => props.$checked
-    ? (props.$sentiment === 'negative' ? emotionalColors.distantBorder : palette.goldMain)
+    ? (props.$sentiment === 'negative' ? hexToRGBA(palette.sentiment.distant, 0.3) : palette.goldMain)
     : 'rgba(255,255,255,0.1)'
   };
   
   background: ${props => props.$checked
-    ? (props.$sentiment === 'negative' ? emotionalColors.distantDim : hexToRGBA(palette.goldMain, 0.1))
+    ? (props.$sentiment === 'negative' ? hexToRGBA(palette.sentiment.distant, 0.1) : hexToRGBA(palette.goldMain, 0.1))
     : 'rgba(255,255,255,0.02)'
   };
   
@@ -613,8 +709,8 @@ const RadioLabel = styled.label<{ $checked: boolean; $sentiment?: 'positive' | '
 
   /* The "Disappointment" Effect: desaturate and dim on hover if negative */
   &:hover {
-    border-color: ${props => props.$sentiment === 'negative' ? emotionalColors.distant : hexToRGBA(palette.goldMain, 0.5)};
-    background: ${props => props.$sentiment === 'negative' ? emotionalColors.distantDim : hexToRGBA(palette.goldMain, 0.05)};
+    border-color: ${props => props.$sentiment === 'negative' ? palette.sentiment.distant : hexToRGBA(palette.goldMain, 0.5)};
+    background: ${props => props.$sentiment === 'negative' ? hexToRGBA(palette.sentiment.distant, 0.1) : hexToRGBA(palette.goldMain, 0.05)};
   }
 
   input {
@@ -622,7 +718,7 @@ const RadioLabel = styled.label<{ $checked: boolean; $sentiment?: 'positive' | '
     width: 16px;
     height: 16px;
     border: 1px solid ${props => props.$checked
-    ? (props.$sentiment === 'negative' ? emotionalColors.distant : palette.goldBright)
+    ? (props.$sentiment === 'negative' ? palette.sentiment.distant : palette.goldBright)
     : 'rgba(255,255,255,0.3)'
   };
     border-radius: 50%;
@@ -636,7 +732,7 @@ const RadioLabel = styled.label<{ $checked: boolean; $sentiment?: 'positive' | '
       content: '';
       width: 8px;
       height: 8px;
-      background: ${props => props.$sentiment === 'negative' ? emotionalColors.distant : palette.goldBright};
+      background: ${props => props.$sentiment === 'negative' ? palette.sentiment.distant : palette.goldBright};
       border-radius: 50%;
       opacity: ${props => props.$checked ? 1 : 0};
       transform: scale(${props => props.$checked ? 1 : 0});
@@ -648,7 +744,7 @@ const RadioLabel = styled.label<{ $checked: boolean; $sentiment?: 'positive' | '
   span {
     font-family: ${palette.fontTech};
     color: ${props => props.$checked
-    ? (props.$sentiment === 'negative' ? emotionalColors.distant : palette.white)
+    ? (props.$sentiment === 'negative' ? palette.sentiment.distant : palette.white)
     : hexToRGBA(palette.white, 0.7)
   };
     font-size: 0.9rem;
@@ -770,10 +866,91 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
     veg: '0'
   };
 
+  // Retrieve hook values
+  const {
+    submissionStatus,
+    mailStatus,
+    submitRSVP,
+    sendInviteMail,
+    resetNetworkState,
+    resetMailStatus
+  } = useMissionNetwork();
+
+  // Local UI State
   const [formData, setFormData] = useState(initialFormState);
-  const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+  // (submissionStatus and mailStatus are now from hook)
   const [showReconsiderModal, setShowReconsiderModal] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+
+  // Mail Feature State - Local Input Only
+  // Mail Feature State - Local Input Only
+  const [email, setEmail] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
+  const DOMAINS = ['gmail.com', 'yahoo.com.tw', 'hotmail.com', 'outlook.com', 'icloud.com'];
+
+  // Countdown Logic
+  useEffect(() => {
+    let timer: any;
+    if (cooldown > 0) {
+      timer = setTimeout(() => setCooldown(prev => prev - 1), 1000);
+    } else if (cooldown === 0 && (mailStatus === 'sent' || mailStatus === 'error')) {
+      resetMailStatus();
+    }
+    return () => clearTimeout(timer);
+  }, [cooldown, mailStatus, resetMailStatus]);
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+
+    // Auto-complete logic
+    if (value.includes('@')) {
+      const [prefix, domainPart] = value.split('@');
+      if (domainPart !== undefined) {
+        const matches = DOMAINS.filter(d => d.startsWith(domainPart));
+        setSuggestions(matches.map(d => `${prefix}@${d}`));
+      } else {
+        setSuggestions([]);
+      }
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const selectSuggestion = (val: string) => {
+    setEmail(val);
+    setSuggestions([]);
+  };
+
+  const handleSendMail = async () => {
+    // Strict Email Regex
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    if (!emailRegex.test(email)) {
+      setToastMsg('無效的通訊頻率 (Invalid Email Format)');
+      setTimeout(() => setToastMsg(''), 3000);
+      return;
+    }
+
+    // Call Hook
+    const success = await sendInviteMail({
+      email,
+      guestName,
+      status: formData.status
+    });
+
+    if (success) {
+      setToastMsg('邀請令已加密傳送至指定信箱');
+      setCooldown(15); // Start 15s cooldown
+    } else {
+      setToastMsg('傳輸失敗，重置系統中...');
+      setCooldown(5); // Error cooldown (shorter)
+    }
+    setTimeout(() => setToastMsg(''), 4000);
+  };
+
 
   const handleDownloadIcs = () => {
     downloadIcsFile(WEDDING_EVENT);
@@ -800,50 +977,27 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
 
   const resetAndClose = () => {
     setFormData(initialFormState);
-    setSubmissionStatus('idle');
+    resetNetworkState();
     onClose();
   };
 
   const proceedToSubmit = async () => {
-    setSubmissionStatus('submitting');
+    // MISSION: Transmission to Google Sheets via Hook
+    const success = await submitRSVP({
+      action: 'rsvp',
+      hash: guestHash,
+      client_uuid: getClientUUID(),
+      agentName: guestName,
+      alias: sanitizeInput(formData.alias),
+      status: formData.status,
+      relation: sanitizeInput(formData.relation),
+      adults: formData.adults,
+      kids: formData.kids,
+      veg: sanitizeInput(formData.veg)
+    });
 
-    // MISSION: Transmission to Google Sheets
-    // TODO: Replace this URL after deploying your Google Apps Script
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyIw_gVH5-O7KXFbAaTA5t_XHLi4YwSoiusXr0qq__47KilzILOdbxH6o-VYWl2y8gm/exec';
-
-    try {
-      const params = new URLSearchParams();
-      params.append('action', 'rsvp');
-      params.append('hash', guestHash);
-      params.append('client_uuid', getClientUUID());
-      params.append('agentName', guestName);
-      params.append('alias', sanitizeInput(formData.alias));
-      params.append('status', formData.status);
-      params.append('relation', sanitizeInput(formData.relation));
-      params.append('adults', formData.adults);
-      params.append('kids', formData.kids);
-      params.append('veg', sanitizeInput(formData.veg));
-
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: params.toString(),
-      });
-
-      const result = await response.json();
-
-      if (result.status === 'success') {
-        console.log("[PROTOCOL] Transmission Success.");
-        setSubmissionStatus('success');
-      } else {
-        throw new Error(result.message || "Unknown error");
-      }
-    } catch (error) {
-      console.error("[CRITICAL] Transmission Failed:", error);
+    if (!success) {
       alert("傳輸失敗，請檢查網路連線或稍後再試。");
-      setSubmissionStatus('idle');
     }
   };
 
@@ -899,22 +1053,9 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
                 <SubmitBtn onClick={handleRetractAbort}>
                   ⚠️ 參與登陸
                 </SubmitBtn>
-                <button
-                  type="button"
-                  onClick={handleConfirmAbort}
-                  style={{
-                    background: 'transparent',
-                    border: `1px solid ${emotionalColors.distant}`,
-                    color: emotionalColors.distant,
-                    padding: '12px',
-                    fontFamily: palette.fontTech,
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    marginTop: '5px'
-                  }}
-                >
+                <ModalSadBtn onClick={handleConfirmAbort}>
                   確認維持遠端
-                </button>
+                </ModalSadBtn>
               </ModalActionGroup>
             </ModalCard>
           </ModalOverlay>
@@ -946,6 +1087,39 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
                         Outlook
                       </CalendarBtn>
                     </CalendarBtnGroup>
+
+                    {/* Mail Invitation Feature */}
+                    <MailContainer>
+                      <CalendarLabel>✉️ SECURE MAIL // 備份傳輸</CalendarLabel>
+                      <MailCommandBar>
+                        <MailInput
+                          type="email"
+                          placeholder="輸入 Email 接收正式邀請函"
+                          value={email}
+                          onChange={handleEmailChange}
+                        />
+                        {suggestions.length > 0 && (
+                          <SuggestionsDropdown>
+                            {suggestions.map(s => (
+                              <SuggestionItem key={s} onClick={() => selectSuggestion(s)}>
+                                {s}
+                              </SuggestionItem>
+                            ))}
+                          </SuggestionsDropdown>
+                        )}
+                        <MailActionBtn
+                          onClick={handleSendMail}
+                          disabled={mailStatus !== 'idle'}
+                          $status={mailStatus}
+                        >
+                          {mailStatus === 'sending' ? (
+                            <TechLoader />
+                          ) : (
+                            (mailStatus === 'sent' || mailStatus === 'error') ? `Wait ${cooldown}s` : 'SEND'
+                          )}
+                        </MailActionBtn>
+                      </MailCommandBar>
+                    </MailContainer>
                   </CalendarWrapper>
 
                   <HeroicBtn onClick={resetAndClose}>確認完成</HeroicBtn>
@@ -961,7 +1135,7 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
                   </SuccessMsg>
 
                   <RedemptionBtn onClick={() => window.open('https://forms.gle/YOUR_GIFT_FORM_URL', '_blank')}>
-                    🎁 開啟補給 (禮到人不到)
+                    🎁 啟動遠端補給協議 (物資投遞)
                   </RedemptionBtn>
 
                   <SadBtn onClick={resetAndClose}>關閉終端</SadBtn>
@@ -978,27 +1152,25 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
 
             <form onSubmit={handleSubmit}>
               {/* Agent Info Section */}
-              <FormGroup>
-                <Label>執行特工 (Agent)</Label>
-                <Input value={guestName} readOnly disabled />
-              </FormGroup>
+              <MissionInput
+                label="執行特工 (Agent)"
+                value={guestName}
+                readOnly
+                disabled
+              />
 
-              <FormGroup>
-                <Label>行動代號 (Codename)</Label>
-                <InputWrapper>
-                  <Input
-                    placeholder="例如：黃昏"
-                    maxLength={20}
-                    required
-                    onFocus={handleInputFocus}
-                    onChange={e => setFormData({ ...formData, alias: e.target.value })}
-                  />
-                </InputWrapper>
-              </FormGroup>
+              <MissionInput
+                label="行動代號 (Codename)"
+                placeholder="例如：黃昏"
+                maxLength={20}
+                required
+                value={formData.alias}
+                onChange={e => setFormData({ ...formData, alias: e.target.value })}
+              />
 
               {/* Status Section */}
-              <FormGroup>
-                <Label>行動意願 (Commitment)</Label>
+              <RadioSection>
+                <SectionLabel>行動意願 (Commitment)</SectionLabel>
                 <RadioGroup>
                   <RadioLabel $checked={formData.status === 'join'} $sentiment="positive">
                     <input
@@ -1022,59 +1194,45 @@ const RSVPForm: React.FC<RSVPFormProps> = ({ guestName, guestHash, onClose }) =>
                     <span>遠端祝賀</span>
                   </RadioLabel>
                 </RadioGroup>
-              </FormGroup>
+              </RadioSection>
 
               {/* Attendance Details */}
-              <FormGroup>
-                <Label>隸屬單位 (Affiliation / 與新人關係)</Label>
-                <InputWrapper>
-                  <Input
-                    placeholder="例如：情報部 (大學同學)"
-                    maxLength={50}
-                    required
-                    onFocus={handleInputFocus}
-                    onChange={e => setFormData({ ...formData, relation: e.target.value })}
-                  />
-                </InputWrapper>
-              </FormGroup>
+              <MissionInput
+                label="隸屬單位 (Affiliation / 與新人關係)"
+                placeholder="例如：情報部 (大學同學)"
+                maxLength={50}
+                required
+                value={formData.relation}
+                onChange={e => setFormData({ ...formData, relation: e.target.value })}
+              />
 
               <Grid>
-                <FormGroup>
-                  <Label>登陸特工人數 (Adults)</Label>
-                  <InputWrapper>
-                    <Input
-                      type="number" min="1" max="10"
-                      defaultValue="1"
-                      required
-                      onFocus={handleInputFocus}
-                      onChange={e => setFormData({ ...formData, adults: e.target.value })}
-                    />
-                  </InputWrapper>
-                </FormGroup>
-                <FormGroup>
-                  <Label>戰術後援人數 (Kids)</Label>
-                  <InputWrapper>
-                    <Input
-                      type="number" min="0" max="10"
-                      placeholder="無則免填"
-                      onFocus={handleInputFocus}
-                      onChange={e => setFormData({ ...formData, kids: e.target.value })}
-                    />
-                  </InputWrapper>
-                </FormGroup>
+                <MissionInput
+                  label="登陸特工人數 (Adults)"
+                  type="number"
+                  min={1} max={10}
+                  defaultValue="1"
+                  required
+                  value={formData.adults}
+                  onChange={e => setFormData({ ...formData, adults: e.target.value })}
+                />
+                <MissionInput
+                  label="戰術後援人數 (Kids)"
+                  type="number"
+                  min={0} max={10}
+                  placeholder="無則免填"
+                  value={formData.kids}
+                  onChange={e => setFormData({ ...formData, kids: e.target.value })}
+                />
               </Grid>
 
-              <FormGroup>
-                <Label>物資特別需求 (Veg Needs / 特殊飲食限制)</Label>
-                <InputWrapper>
-                  <Input
-                    placeholder="例如：2素/不吃牛/海鮮過敏"
-                    maxLength={100}
-                    onFocus={handleInputFocus}
-                    onChange={e => setFormData({ ...formData, veg: e.target.value })}
-                  />
-                </InputWrapper>
-              </FormGroup>
+              <MissionInput
+                label="物資特別需求 (Veg Needs / 特殊飲食限制)"
+                placeholder="例如：2素/不吃牛/海鮮過敏"
+                maxLength={100}
+                value={formData.veg}
+                onChange={e => setFormData({ ...formData, veg: e.target.value })}
+              />
 
               <SubmitBtn type="submit" disabled={submissionStatus === 'submitting'} style={{ opacity: submissionStatus === 'submitting' ? 0.7 : 1 }}>
                 {submissionStatus === 'submitting' ? '加密傳輸中...' : '啟動傳輸'}

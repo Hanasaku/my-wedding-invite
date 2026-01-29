@@ -283,15 +283,15 @@ const Invitation: React.FC<InvitationProps> = ({ guestName, guestHash }) => {
             <Value>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', margin: '10px 0 15px 0' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                  <div style={{ width: '40px', height: '40px', background: 'linear-gradient(45deg, #4A4A4A, #757575)', border: `1px solid ${palette.goldMain}`, boxShadow: `0 0 15px ${hexToRGBA(palette.goldMain, 0.3)}` }} />
+                  <div style={{ width: '40px', height: '40px', background: `linear-gradient(45deg, ${palette.dressCode.grey.from}, ${palette.dressCode.grey.to})`, border: `1px solid ${palette.goldMain}`, boxShadow: `0 0 15px ${hexToRGBA(palette.goldMain, 0.3)}` }} />
                   <span style={{ fontSize: '0.7rem', color: palette.goldMain }}>GREY</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                  <div style={{ width: '40px', height: '40px', background: 'linear-gradient(45deg, #1A237E, #3949AB)', border: `1px solid ${palette.goldMain}`, boxShadow: `0 0 15px ${hexToRGBA(palette.goldMain, 0.3)}` }} />
+                  <div style={{ width: '40px', height: '40px', background: `linear-gradient(45deg, ${palette.dressCode.blue.from}, ${palette.dressCode.blue.to})`, border: `1px solid ${palette.goldMain}`, boxShadow: `0 0 15px ${hexToRGBA(palette.goldMain, 0.3)}` }} />
                   <span style={{ fontSize: '0.7rem', color: palette.goldMain }}>BLUE</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                  <div style={{ width: '40px', height: '40px', background: 'linear-gradient(45deg, #4A148C, #7B1FA2)', border: `1px solid ${palette.goldMain}`, boxShadow: `0 0 15px ${hexToRGBA(palette.goldMain, 0.3)}` }} />
+                  <div style={{ width: '40px', height: '40px', background: `linear-gradient(45deg, ${palette.dressCode.purple.from}, ${palette.dressCode.purple.to})`, border: `1px solid ${palette.goldMain}`, boxShadow: `0 0 15px ${hexToRGBA(palette.goldMain, 0.3)}` }} />
                   <span style={{ fontSize: '0.7rem', color: palette.goldMain }}>PURPLE</span>
                 </div>
                 <div style={{ marginLeft: '10px', fontSize: '1.2rem', color: palette.goldBright, fontWeight: 'bold', letterSpacing: '2px' }}>

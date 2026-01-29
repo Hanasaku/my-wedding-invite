@@ -23,6 +23,19 @@ export const palette = {
     black: '#000000',
     transparent: 'transparent',
 
+    // Dress Code Swatches (Gradient Pairs)
+    dressCode: {
+        grey: { from: '#4A4A4A', to: '#757575' },
+        blue: { from: '#1A237E', to: '#3949AB' },
+        purple: { from: '#4A148C', to: '#7B1FA2' },
+    },
+
+    // UX / Emotional States
+    sentiment: {
+        positive: '#D4AF37', // goldMain
+        distant: '#607d8b',  // Steel Blue Grey
+    },
+
     // Fonts
     fontTech: "'Rajdhani', sans-serif",
     fontClassy: "'Cinzel', serif",
